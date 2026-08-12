@@ -2,8 +2,9 @@ import type { MetricDefinition } from "./types";
 
 // ---------------------------------------------------------------------------
 // Data sources. Every source carries an honest cadence + typical lag, so the
-// UI can disclose vintage on every metric (Business Plan §3: "methodological
-// honesty about data vintage" is the moat).
+// UI can disclose vintage on every metric. Vintage disclosure is CHI's quality
+// FLOOR (Business Plan §4), not the moat — the moat is the archive + crosswalk
+// data assets in §3.
 // ---------------------------------------------------------------------------
 export interface SourceDef {
   key: string;

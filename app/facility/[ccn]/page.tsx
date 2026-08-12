@@ -10,6 +10,7 @@ import { RiskFlagList } from "@/components/RiskFlags";
 import { StarRating } from "@/components/StarRating";
 import { OwnershipBadges, StatTile } from "@/components/Badges";
 import { VintageChip } from "@/components/VintageChip";
+import { ConfidenceBadge } from "@/components/Confidence";
 import { METRICS_BY_CATEGORY, CATEGORY_LABELS } from "@/lib/metrics";
 import { formatValue } from "@/lib/format";
 import type { MetricCategory } from "@/lib/types";
@@ -59,11 +60,13 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
             <OwnershipBadges facility={facility} owner={owner} />
           </div>
           {chain && (
-            <p className="mt-2 text-sm">
-              Part of{" "}
-              <Link href={`/chain/${chain.id}`} className="link-quiet font-medium">{chain.name}</Link>
-              {owner?.pe_sponsor_name && <> · Sponsor: {owner.pe_sponsor_name}</>}
-              {owner?.reit_name && <> · Landlord: {owner.reit_name}</>}
+            <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
+              <span>Part of{" "}
+                <Link href={`/chain/${chain.id}`} className="link-quiet font-medium">{chain.name}</Link>
+                {owner?.pe_sponsor_name && <> · Sponsor: {owner.pe_sponsor_name}</>}
+                {owner?.reit_name && <> · Landlord: {owner.reit_name}</>}
+              </span>
+              <ConfidenceBadge confidence={facility.chain_confidence} />
             </p>
           )}
           <p className="mt-1 font-mono text-xs text-ink-faint">CCN {facility.ccn}</p>
@@ -118,7 +121,10 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
       {/* Trends */}
       <section className="mt-10">
         <h2 className="text-xl font-semibold text-ink">Trends</h2>
-        <p className="mt-1 text-sm text-ink-soft">The trajectory Care Compare doesn&apos;t show.</p>
+        <p className="mt-1 text-sm text-ink-soft">
+          Care Compare has no memory of last quarter. Because CHI archives every vintage, the Atlas
+          shows the trajectory.
+        </p>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {trendMetrics.map((m) => (
             <div key={m!.definition.key} className="card p-4">

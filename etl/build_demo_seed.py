@@ -153,12 +153,20 @@ def build():
             owner_id = owner["id"]
             independent = True
 
+        # Crosswalk confidence: chain members come from the CMS affiliated-entity
+        # grouping ("verified"); a minority are judgment-based ("inferred") and are
+        # excluded from a chain's published aggregates (Business Plan §11).
+        chain_conf = None
+        if chain_id:
+            chain_conf = "inferred" if rng.random() < 0.15 else "verified"
+
         facilities.append(dict(
             ccn=ccn, name=name, address=f"{rng.randint(100, 9899)} {rng.choice(STREETS)}",
             city=city, state="TX", county=county, zip=zip_,
             ownership_type=chain["ownership"] if chain else rng.choice(["For-profit", "For-profit", "Non-profit"]),
             certified_beds=beds, avg_residents_per_day=residents,
             chain_id=chain_id, owner_id=owner_id, independent=independent,
+            chain_confidence=chain_conf,
         ))
 
         # ---- time-series metrics (quarterly) --------------------------------
@@ -228,9 +236,16 @@ def build():
                 snapshots.append(dict(ccn=ccn, metric_key=mk, period=fy, value=val,
                                       vintage_date=HCRIS_VINTAGE[fy], source="hcris"))
 
-    for chain in CHAINS:
+    for i, chain in enumerate(CHAINS):
+        o = chain["owner"]
+        # Sponsor/landlord resolution confidence: named relationships are
+        # "verified"; one chain is left "inferred" to exercise the UI discipline.
+        res_conf = "inferred" if i == len(CHAINS) - 1 else "verified"
         chains_out.append(dict(id=chain["id"], name=chain["name"],
-                               owner_id=chain["owner"]["id"], headquarters_state="TX"))
+                               owner_id=o["id"], headquarters_state="TX",
+                               sponsor_name=o.get("pe_sponsor_name"),
+                               reit_name=o.get("reit_name"),
+                               resolution_confidence=res_conf))
         for _ in range(chain["n"]):
             emit_facility(chain)
     for _ in range(N_INDEPENDENT):
@@ -240,7 +255,8 @@ def build():
                        private_equity=o.get("private_equity", False),
                        reit=o.get("reit", False),
                        reit_name=o.get("reit_name"),
-                       pe_sponsor_name=o.get("pe_sponsor_name"))
+                       pe_sponsor_name=o.get("pe_sponsor_name"),
+                       confidence=("verified" if (o.get("private_equity") or o.get("reit")) else None))
                   for o in owners_by_id.values()]
 
     os.makedirs(OUT_DIR, exist_ok=True)

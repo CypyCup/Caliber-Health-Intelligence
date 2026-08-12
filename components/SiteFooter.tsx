@@ -15,6 +15,7 @@ export function SiteFooter() {
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Atlas</p>
           <ul className="mt-3 space-y-2 text-sm">
             <li><Link className="link-quiet" href="/search">Explore facilities</Link></li>
+            <li><Link className="link-quiet" href="/chains">Operators &amp; chains</Link></li>
             <li><Link className="link-quiet" href="/compare">Compare facilities</Link></li>
             <li><Link className="link-quiet" href="/methodology">Methodology &amp; sources</Link></li>
           </ul>
@@ -31,8 +32,9 @@ export function SiteFooter() {
         <div className="text-sm text-ink-faint">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Disclosure</p>
           <p className="mt-3">
-            Built on public CMS data. Every metric carries an explicit vintage. The Atlas surfaces
-            transparent, rule-based signals — not investment advice.
+            Built on public CMS data — a captured archive plus an ownership crosswalk. Every metric
+            carries its vintage. The Atlas surfaces transparent, rule-based signals — not investment
+            advice.
           </p>
         </div>
       </div>

@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { getSeedMeta, searchFacilities, getAllChains } from "@/lib/data";
+import { getSeedMeta, searchFacilities, getChainsDirectory, getArchiveInfo } from "@/lib/data";
 import { SearchBox } from "@/components/SearchBox";
+import { PanelCTA } from "@/components/PanelCTA";
+import { NATIONAL_SCOPE } from "@/lib/scope";
 
 export default async function HomePage() {
-  const [meta, topRisk, chains] = await Promise.all([
+  const [meta, topRisk, chains, archive] = await Promise.all([
     getSeedMeta(),
     searchFacilities({ hasFlags: true }),
-    getAllChains(),
+    getChainsDirectory(),
+    getArchiveInfo(),
   ]);
   const highlighted = topRisk.slice(0, 6);
+  const topChains = chains.slice(0, 6);
 
   return (
     <>
@@ -17,16 +21,18 @@ export default async function HomePage() {
         <div className="container-chi py-16 sm:py-20">
           <p className="kicker">Caliber Health Intelligence · Free public-data surface</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
-            The workforce economics of every U.S. nursing home — with the vintage on every number.
+            Every U.S. nursing home, resolved to the chains, sponsors, and REITs that own it.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-ink-soft">
-            The Caliber Workforce Atlas turns CMS public data into an underwriting-grade view of
-            staffing, turnover, agency reliance, regulatory exposure, and financial pressure — with
-            the quarter-over-quarter and year-over-year trends Care Compare doesn&apos;t show.
+            The Caliber Workforce Atlas sits on a proprietary data asset:{" "}
+            <strong>{NATIONAL_SCOPE.facilities.toLocaleString()}</strong> facilities resolved into{" "}
+            <strong>{NATIONAL_SCOPE.chains.toLocaleString()}</strong> operating chains, and a
+            point-in-time archive of every quarter CMS publishes and then overwrites. That&apos;s the
+            staffing, turnover, and ownership picture at the level an underwriter actually decides on.
           </p>
 
           <div className="mt-8 max-w-xl">
-            <SearchBox autoFocus placeholder="Search facilities, cities, chains, or owners…" />
+            <SearchBox autoFocus placeholder="Search facilities, chains, sponsors, or REITs…" />
             <p className="mt-2 text-xs text-ink-faint">
               Built for PE, healthcare REITs, and lenders running diligence — and the operators who
               live these numbers.
@@ -34,11 +40,11 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3 text-sm">
+            <Link href="/chains" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-ink-soft hover:border-brand hover:text-brand">
+              Browse operators &amp; chains →
+            </Link>
             <Link href="/search?ownerType=pe" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-ink-soft hover:border-brand hover:text-brand">
               PE-backed facilities →
-            </Link>
-            <Link href="/search?hasFlags=1" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-ink-soft hover:border-brand hover:text-brand">
-              Facilities with risk flags →
             </Link>
             <Link href="/search?ownerType=reit" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium text-ink-soft hover:border-brand hover:text-brand">
               REIT-held facilities →
@@ -47,42 +53,69 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Value props */}
+      {/* The three assets */}
       <section className="container-chi py-14">
-        <div className="grid gap-6 md:grid-cols-3">
+        <p className="kicker">Why the Atlas is different</p>
+        <h2 className="mt-1 text-2xl font-semibold text-ink">Research on a proprietary data asset</h2>
+        <p className="mt-1 max-w-2xl text-sm text-ink-soft">
+          Like PitchBook for private markets, the value isn&apos;t a disclosure convention anyone can
+          copy — it&apos;s the data underneath, which compounds every quarter.
+        </p>
+        <div className="mt-6 grid gap-6 md:grid-cols-3">
           <ValueProp
-            title="Vintage on every metric"
-            body="Staffing is current to the latest PBJ quarter; cost-report financials lag 12–18 months. We disclose which is which, on every number — the discipline that anchors CHI's research."
+            badge="Resolution"
+            title="Ownership, resolved"
+            body="A CCN names a building, not who owns it. We map facilities to their operating chain, private-equity sponsor, and REIT landlord — the only level at which a portfolio question can be answered. Every mapping is flagged verified or inferred."
           />
           <ValueProp
-            title="Trends, not snapshots"
-            body="Care Compare shows today. The Atlas shows the trajectory: QoQ and YoY movement on staffing, turnover, agency reliance, and ratings, for every facility and every chain."
+            badge="Depth"
+            title="The point-in-time archive"
+            body="CMS overwrites its files each cycle with no changelog. We capture every vintage as published, so the Atlas remembers what the record said last quarter and last year. A competitor starting in 2030 can't buy elapsed time."
           />
           <ValueProp
-            title="Transparent risk flags"
-            body="Every flag ties to one disclosed CMS metric and one published threshold — the CMS staffing minimum, national turnover medians, Immediate Jeopardy. No black-box score."
+            badge="Trend"
+            title="History Care Compare deletes"
+            body="Care Compare shows today, with no memory of yesterday. Because we own the archive, the Atlas shows quarter-over-quarter and year-over-year movement on every metric — and the trend line deepens every quarter."
           />
         </div>
+        <p className="mt-6 max-w-3xl text-xs text-ink-faint">
+          A quality floor underneath all of it: every metric carries an explicit vintage, and current
+          claims are built only on genuinely current sources. That discipline is table stakes, not the
+          moat — the moat is the asset above.
+        </p>
       </section>
 
       {/* Chains / portfolio lens */}
       <section className="border-y border-slate-200 bg-paper-muted">
         <div className="container-chi py-14">
-          <div className="flex items-end justify-between">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="kicker">Portfolio lens</p>
-              <h2 className="mt-1 text-2xl font-semibold text-ink">Roll up risk by operator &amp; owner</h2>
+              <p className="kicker">Portfolio lens · the entity-resolution layer</p>
+              <h2 className="mt-1 text-2xl font-semibold text-ink">Screen operators the way an underwriter would</h2>
               <p className="mt-1 max-w-2xl text-sm text-ink-soft">
-                Screen a whole chain the way an underwriter would: census-weighted staffing, how many
-                facilities sit below the CMS staffing benchmark, and where Immediate Jeopardy clusters.
+                Census-weighted staffing, how many facilities sit below the CMS staffing benchmark, and
+                where Immediate Jeopardy clusters — rolled up by chain, sponsor, and landlord.
               </p>
             </div>
+            <Link href="/chains" className="text-sm font-medium text-brand hover:text-brand-deep">
+              All operators &amp; chains →
+            </Link>
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {chains.map((c) => (
-              <Link key={c.id} href={`/chain/${c.id}`} className="card p-4 transition hover:border-brand">
-                <p className="font-semibold text-ink">{c.name}</p>
-                <p className="mt-1 text-sm text-brand">View portfolio risk roll-up →</p>
+            {topChains.map((c) => (
+              <Link key={c.chain.id} href={`/chain/${c.chain.id}`} className="card p-4 transition hover:border-brand">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-ink">{c.chain.name}</p>
+                  <div className="flex gap-1">
+                    {c.private_equity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE</span>}
+                    {c.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT</span>}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-ink-faint">{c.verified_count} facilities · {c.avg_total_nurse_hprd?.toFixed(2) ?? "—"} HPRD</p>
+                <p className="mt-2 text-xs">
+                  <span className="font-medium text-risk-high">{c.below_benchmark}</span>
+                  <span className="text-ink-faint"> below CMS staffing benchmark</span>
+                </p>
               </Link>
             ))}
           </div>
@@ -96,9 +129,7 @@ export default async function HomePage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {highlighted.map((row) => (
             <Link key={row.facility.ccn} href={`/facility/${row.facility.ccn}`} className="card p-4 transition hover:border-brand">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-ink">{row.facility.name}</p>
-              </div>
+              <p className="font-semibold text-ink">{row.facility.name}</p>
               <p className="text-xs text-ink-faint">{row.facility.city}, TX · {row.chainName ?? "Independent"}</p>
               <div className="mt-3 flex items-center justify-between text-sm">
                 <span className="text-ink-soft">
@@ -116,27 +147,32 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Methodology / trust strip */}
-      <section className="border-t border-slate-200 bg-ink text-white">
+      {/* Operator panel recruitment */}
+      <section className="container-chi pb-4">
+        <PanelCTA />
+      </section>
+
+      {/* Trust strip */}
+      <section className="mt-10 border-t border-slate-200 bg-ink text-white">
         <div className="container-chi py-12">
           <div className="grid gap-8 md:grid-cols-[1.4fr_1fr]">
             <div>
-              <h2 className="text-2xl font-semibold">Methodological honesty, by design</h2>
+              <h2 className="text-2xl font-semibold">A data asset, not a disclosure convention</h2>
               <p className="mt-3 max-w-xl text-slate-300">
-                The Atlas uses only public CMS sources. It never claims freshness the underlying data
-                doesn&apos;t have. What it shows for free is the data and the trends; the analytical
-                synthesis — peer cohorts, financial overlays, forward commentary — is CHI&apos;s
-                quarterly research subscription.
+                The Atlas uses only public CMS sources, and it never claims freshness the underlying
+                data doesn&apos;t have. What it shows for free is the resolved data and the trend the
+                archive makes possible; the analytical synthesis — peer cohorts, financial overlays,
+                forward commentary — is CHI&apos;s quarterly research subscription.
               </p>
               <Link href="/methodology" className="mt-5 inline-block rounded-lg bg-white px-4 py-2 text-sm font-semibold text-ink hover:bg-slate-100">
                 Read the methodology
               </Link>
             </div>
             <dl className="grid grid-cols-2 gap-4 text-sm">
-              <Stat label="Facilities in this demo" value={meta.facilities.toLocaleString()} />
-              <Stat label="Operators / chains" value={meta.chains.toLocaleString()} />
-              <Stat label="Quarters of history" value={meta.quarters.length.toLocaleString()} />
-              <Stat label="Data sources" value="6 CMS datasets" />
+              <Stat label="Facilities (national model)" value={NATIONAL_SCOPE.facilities.toLocaleString()} />
+              <Stat label="Operating chains" value={NATIONAL_SCOPE.chains.toLocaleString()} />
+              <Stat label="Archive depth (this demo)" value={`${archive.depth} quarters`} />
+              <Stat label="Loaded in this demo" value={`${meta.facilities} facilities`} />
             </dl>
           </div>
         </div>
@@ -145,10 +181,11 @@ export default async function HomePage() {
   );
 }
 
-function ValueProp({ title, body }: { title: string; body: string }) {
+function ValueProp({ badge, title, body }: { badge: string; title: string; body: string }) {
   return (
     <div className="card p-5">
-      <h3 className="font-semibold text-ink">{title}</h3>
+      <span className="kicker">{badge}</span>
+      <h3 className="mt-1 font-semibold text-ink">{title}</h3>
       <p className="mt-2 text-sm text-ink-soft">{body}</p>
     </div>
   );

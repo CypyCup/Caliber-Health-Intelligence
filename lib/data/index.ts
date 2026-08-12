@@ -101,9 +101,13 @@ export interface ChainProfile {
   facilities: Facility[];
   /** Roll-up of each member facility's flags. */
   facilityFlags: Record<string, RiskFlag[]>;
-  /** Census-weighted staffing/turnover aggregates. */
+  /** Census-weighted staffing/turnover aggregates. Computed over VERIFIED
+   *  members only — inferred mappings are excluded from published chain-level
+   *  figures (Business Plan §11). */
   aggregates: {
     facility_count: number;
+    verified_count: number;
+    inferred_count: number;
     total_beds: number;
     total_residents: number;
     avg_total_nurse_hprd: number | null;
@@ -128,16 +132,23 @@ export async function getChainProfile(id: string): Promise<ChainProfile | undefi
   let starSum = 0, starCount = 0;
   let belowBench = 0, withIj = 0, highTurn = 0, totalFlags = 0;
   let totalBeds = 0, totalResidents = 0;
+  let verifiedCount = 0, inferredCount = 0;
 
   for (const f of members) {
     const snaps = snapshotsByCcn[f.ccn] ?? [];
-    const total = resolveMetric("total_nurse_hprd", snaps);
-    const turn = resolveMetric("total_nurse_turnover_pct", snaps);
-    const agency = resolveMetric("contract_staff_pct", snaps);
-    const overall = resolveMetric("overall_star", snaps);
     const metrics = resolveMetrics(ALL_METRIC_KEYS, snaps);
     const flags = computeFacilityRiskFlags(metrics);
     facilityFlags[f.ccn] = flags;
+
+    // Inferred mappings are shown, but excluded from published chain-level figures.
+    const published = f.chain_confidence !== "inferred";
+    if (published) verifiedCount += 1;
+    else { inferredCount += 1; continue; }
+
+    const total = metrics["total_nurse_hprd"];
+    const turn = metrics["total_nurse_turnover_pct"];
+    const agency = metrics["contract_staff_pct"];
+    const overall = metrics["overall_star"];
     totalFlags += flags.length;
     totalBeds += f.certified_beds;
     totalResidents += f.avg_residents_per_day;
@@ -160,6 +171,8 @@ export async function getChainProfile(id: string): Promise<ChainProfile | undefi
     facilityFlags,
     aggregates: {
       facility_count: members.length,
+      verified_count: verifiedCount,
+      inferred_count: inferredCount,
       total_beds: totalBeds,
       total_residents: totalResidents,
       avg_total_nurse_hprd: wStaffDen ? round(wStaffNum / wStaffDen, 2) : null,
@@ -262,6 +275,69 @@ export async function searchFacilities(params: SearchParams = {}): Promise<Facil
 
 export async function getCities(): Promise<string[]> {
   return Array.from(new Set(facilities.map((f) => f.city))).sort();
+}
+
+// --- Entity-resolution crosswalk: chains directory -------------------------
+export interface ChainDirectoryRow {
+  chain: Chain;
+  owner?: OwnerEntity;
+  verified_count: number;
+  inferred_count: number;
+  total_beds: number;
+  avg_total_nurse_hprd: number | null;
+  avg_turnover_pct: number | null;
+  avg_overall_star: number | null;
+  below_benchmark: number;
+  with_ij: number;
+  total_flags: number;
+  private_equity: boolean;
+  reit: boolean;
+}
+
+export async function getChainsDirectory(): Promise<ChainDirectoryRow[]> {
+  const rows = await Promise.all(
+    chains.map(async (c) => {
+      const p = await getChainProfile(c.id);
+      const a = p!.aggregates;
+      return {
+        chain: c,
+        owner: p!.owner,
+        verified_count: a.verified_count,
+        inferred_count: a.inferred_count,
+        total_beds: a.total_beds,
+        avg_total_nurse_hprd: a.avg_total_nurse_hprd,
+        avg_turnover_pct: a.avg_turnover_pct,
+        avg_overall_star: a.avg_overall_star,
+        below_benchmark: a.facilities_below_staffing_benchmark,
+        with_ij: a.facilities_with_ij,
+        total_flags: a.total_flags,
+        private_equity: !!p!.owner?.private_equity,
+        reit: !!p!.owner?.reit,
+      };
+    }),
+  );
+  rows.sort((x, y) => y.below_benchmark - x.below_benchmark || y.total_flags - x.total_flags);
+  return rows;
+}
+
+// --- The point-in-time archive: how deep is the captured history? ----------
+export interface ArchiveInfo {
+  quarters: string[];
+  depth: number;
+  earliest: string;
+  latest: string;
+}
+
+export async function getArchiveInfo(): Promise<ArchiveInfo> {
+  const periods = Array.from(new Set(snapshots.map((s) => s.period)))
+    .filter((p) => /^\d{4}Q[1-4]$/.test(p))
+    .sort();
+  return {
+    quarters: periods,
+    depth: periods.length,
+    earliest: periods[0] ?? "",
+    latest: periods[periods.length - 1] ?? "",
+  };
 }
 
 function round(n: number, places: number): number {

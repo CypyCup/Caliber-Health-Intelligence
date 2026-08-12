@@ -3,6 +3,7 @@ import { Logo } from "./Logo";
 
 const NAV = [
   { href: "/search", label: "Explore facilities" },
+  { href: "/chains", label: "Operators & chains" },
   { href: "/compare", label: "Compare" },
   { href: "/methodology", label: "Methodology" },
 ];

@@ -7,6 +7,7 @@ import { RegistrationWall } from "@/components/RegistrationWall";
 import { StatTile } from "@/components/Badges";
 import { StarRating } from "@/components/StarRating";
 import { FlagSummary } from "@/components/RiskFlags";
+import { ConfidenceBadge } from "@/components/Confidence";
 import { BENCHMARKS } from "@/lib/benchmarks";
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
@@ -26,7 +27,7 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
   if (!profile) notFound();
   const { owner, facilities, facilityFlags, aggregates: a } = profile;
 
-  const belowPct = a.facility_count ? Math.round((a.facilities_below_staffing_benchmark / a.facility_count) * 100) : 0;
+  const belowPct = a.verified_count ? Math.round((a.facilities_below_staffing_benchmark / a.verified_count) * 100) : 0;
 
   return (
     <div className="container-chi py-8">
@@ -41,18 +42,25 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
           <p className="kicker">Portfolio roll-up</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">{chain.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {owner?.private_equity && (
+            {(owner?.private_equity || chain.sponsor_name) && (
               <span className="pill bg-violet-50 text-violet-700 border border-violet-200">
-                PE sponsor: {owner.pe_sponsor_name}
+                PE sponsor: {chain.sponsor_name ?? owner?.pe_sponsor_name}
               </span>
             )}
-            {owner?.reit && (
+            {(owner?.reit || chain.reit_name) && (
               <span className="pill bg-sky-50 text-sky-700 border border-sky-200">
-                REIT landlord: {owner.reit_name}
+                REIT landlord: {chain.reit_name ?? owner?.reit_name}
               </span>
             )}
-            <span className="pill bg-slate-100 text-ink-soft">{a.facility_count} facilities · TX</span>
+            <ConfidenceBadge confidence={chain.resolution_confidence} />
+            <span className="pill bg-slate-100 text-ink-soft">
+              {a.verified_count} verified{a.inferred_count > 0 ? ` · ${a.inferred_count} inferred` : ""} · TX
+            </span>
           </div>
+          <p className="mt-2 max-w-2xl text-xs text-ink-faint">
+            Sponsor and landlord resolution from the CHI entity-resolution crosswalk. Published figures
+            below count verified members only.
+          </p>
         </div>
       </div>
 
@@ -84,19 +92,19 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
           <ExposureBar
             label="Below CMS staffing benchmark"
             count={a.facilities_below_staffing_benchmark}
-            total={a.facility_count}
+            total={a.verified_count}
             tone="high"
           />
           <ExposureBar
             label="Turnover above national median"
             count={a.facilities_high_turnover}
-            total={a.facility_count}
+            total={a.verified_count}
             tone="watch"
           />
           <ExposureBar
             label="Immediate Jeopardy (latest cycle)"
             count={a.facilities_with_ij}
-            total={a.facility_count}
+            total={a.verified_count}
             tone="critical"
           />
         </div>
@@ -116,6 +124,7 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
               <tr>
                 <th className="px-4 py-3 font-medium">Facility</th>
                 <th className="px-4 py-3 font-medium">City</th>
+                <th className="px-4 py-3 font-medium">Mapping</th>
                 <th className="px-4 py-3 font-medium text-right">Beds</th>
                 <th className="px-4 py-3 font-medium">Risk flags</th>
               </tr>
@@ -127,6 +136,7 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
                     <Link href={`/facility/${f.ccn}`} className="font-medium text-brand hover:underline">{f.name}</Link>
                   </td>
                   <td className="px-4 py-3 text-ink-soft">{f.city}</td>
+                  <td className="px-4 py-3"><ConfidenceBadge confidence={f.chain_confidence} /></td>
                   <td className="px-4 py-3 text-right stat-num">{f.certified_beds}</td>
                   <td className="px-4 py-3"><FlagSummary flags={facilityFlags[f.ccn] ?? []} /></td>
                 </tr>

@@ -1,15 +1,21 @@
 // Core domain types for the Caliber Workforce Atlas.
 //
 // The data model is deliberately time-series first: every metric is stored as a
-// dated snapshot so the Atlas can show quarter-over-quarter and year-over-year
-// trends (the feature that distinguishes it from CMS Care Compare's snapshots),
-// and every value carries an explicit vintage — the methodological discipline
-// that anchors Caliber Health Intelligence (Business Plan §3, §4.1).
+// dated snapshot. This is the in-app expression of CHI's point-in-time archive
+// (Business Plan §3) — it lets the Atlas show quarter-over-quarter and
+// year-over-year trends that CMS Care Compare, which keeps no history, cannot.
+// Every value also carries an explicit vintage, CHI's quality floor (§4).
 
 export type OwnershipType =
   | "For-profit"
   | "Non-profit"
   | "Government";
+
+/** How a crosswalk mapping was established. "verified" means confirmed against
+ *  a public filing / CMS affiliated-entity grouping; "inferred" means derived by
+ *  judgment. Inferred mappings are excluded from published chain-level figures
+ *  (Business Plan §11 crosswalk discipline). */
+export type Confidence = "verified" | "inferred";
 
 export interface OwnerEntity {
   id: string;
@@ -20,6 +26,8 @@ export interface OwnerEntity {
   reit: boolean;
   reit_name?: string;
   pe_sponsor_name?: string;
+  /** Confidence in the PE/REIT resolution. */
+  confidence?: Confidence;
 }
 
 export interface Chain {
@@ -28,6 +36,10 @@ export interface Chain {
   /** Owner entity that controls the chain, if identified. */
   owner_id?: string;
   headquarters_state?: string;
+  sponsor_name?: string;
+  reit_name?: string;
+  /** Confidence in the chain's sponsor/landlord resolution. */
+  resolution_confidence?: Confidence;
 }
 
 export interface Facility {
@@ -46,6 +58,10 @@ export interface Facility {
   owner_id?: string;
   /** True when we could not attribute the facility to a chain. */
   independent: boolean;
+  /** How the facility→chain mapping was established. "verified" = from the CMS
+   *  affiliated-entity grouping; "inferred" = judgment-based. Inferred members
+   *  are excluded from a chain's published aggregates. */
+  chain_confidence?: Confidence;
 }
 
 /** A single dated observation of one metric for one facility. */
