@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getCmsChainsDirectory, getCmsChainMeta, getCmsNational } from "@/lib/data/cmsChains";
+import { getAllChainFacilityRollups } from "@/lib/data";
 import { getChainOwnership } from "@/lib/ownershipOverrides";
 import { CmsChainsTable, type ChainRow } from "@/components/CmsChainsTable";
 import { formatVintage } from "@/lib/format";
@@ -11,9 +12,11 @@ export default async function ChainsPage() {
   const dir = getCmsChainsDirectory();
   const meta = getCmsChainMeta();
   const national = getCmsNational();
+  const rollups = await getAllChainFacilityRollups();
 
   const rows: ChainRow[] = dir.map((r) => {
     const own = getChainOwnership(r.chain.id);
+    const roll = rollups[r.chain.id];
     return {
       id: r.chain.id,
       name: r.chain.name,
@@ -33,6 +36,8 @@ export default async function ChainsPage() {
       privateEquity: own?.private_equity,
       reit: own?.reit,
       publicTicker: own?.public_ticker,
+      occupancy_pct: roll?.avg_occupancy_pct ?? null,
+      missingPbjPct: roll?.missing_pbj_pct,
     };
   });
 
@@ -51,9 +56,9 @@ export default async function ChainsPage() {
         an investor question is actually asked at. Real CMS data, vintage {formatVintage((national.vintage_date as string) ?? meta.latest_period + "-01")}.
       </p>
       <p className="mt-2 text-xs text-ink-faint">
-        Chain-level measures are real CMS data. Facility-level drill-down is an illustrative demo
-        until the Provider Information ETL is loaded. PE-sponsor and REIT-landlord resolution is
-        CHI&apos;s value-add on top of this file.
+        Chain-level measures are real CMS data, and each chain links to its real member facilities
+        (via CMS Chain ID). Occupancy and incomplete-PBJ counts are CHI-computed from the facility
+        list; PE-sponsor and REIT-landlord resolution is CHI&apos;s value-add layered on top.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">

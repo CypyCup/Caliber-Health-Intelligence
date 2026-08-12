@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CmsChainProfile, ResolvedChainMetric } from "@/lib/data/cmsChains";
+import type { ChainFacilityRollup } from "@/lib/data";
 import type { ChainOwnership } from "@/lib/ownershipOverrides";
 import { CHAIN_METRICS_BY_CATEGORY } from "@/lib/cmsChainMetrics";
 import { CATEGORY_LABELS } from "@/lib/metrics";
@@ -26,10 +27,12 @@ function fmt(v: number | null | undefined, unit: string, precision: number): str
 export function CmsChainProfileView({
   profile,
   members = [],
+  rollup,
   ownership,
 }: {
   profile: CmsChainProfile;
   members?: MemberFacility[];
+  rollup?: ChainFacilityRollup;
   ownership?: ChainOwnership;
 }) {
   const { chain, metrics, flags, national, latestPeriod } = profile;
@@ -92,6 +95,30 @@ export function CmsChainProfileView({
         <StatTile label="Staffing rating" value={fmt(staffing?.latest_value, "stars", 1)} />
         <StatTile label="Facilities" value={Math.round(chain.num_facilities ?? 0).toLocaleString()} sub={`${chain.num_states ?? "—"} states`} />
       </div>
+
+      {/* Chain metrics derived from the facility list (CHI value-add) */}
+      {rollup && rollup.facility_count > 0 && (
+        <section className="mt-8 rounded-xl border border-slate-200 bg-paper-muted p-5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-ink">From the facility roll-up</h2>
+            <span className="pill bg-brand-tint text-brand border border-brand/20">CHI-computed</span>
+          </div>
+          <p className="mt-1 text-sm text-ink-soft">
+            Chain-level measures CMS&apos;s chain file doesn&apos;t publish — derived by CHI from the
+            {" "}{rollup.facility_count} member facilities.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <StatTile label="Average occupancy" value={rollup.avg_occupancy_pct != null ? `${rollup.avg_occupancy_pct.toFixed(1)}%` : "—"} sub="census ÷ certified beds (bed-weighted)" />
+            <StatTile
+              label="Facilities with incomplete PBJ data"
+              value={`${rollup.facilities_missing_pbj} of ${rollup.facility_count}`}
+              sub={`${rollup.missing_pbj_pct}% — staffing/turnover not computable (fn 26/27)`}
+              tone={rollup.missing_pbj_pct >= 25 ? "warn" : "default"}
+            />
+            <StatTile label="Certified beds (portfolio)" value={rollup.total_beds.toLocaleString()} />
+          </div>
+        </section>
+      )}
 
       {/* Risk flags */}
       <section className="mt-10">

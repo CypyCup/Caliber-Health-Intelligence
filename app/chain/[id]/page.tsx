@@ -10,7 +10,7 @@ import { FlagSummary } from "@/components/RiskFlags";
 import { ConfidenceBadge } from "@/components/Confidence";
 import { BENCHMARKS } from "@/lib/benchmarks";
 import { getCmsChainById, getCmsChainProfile } from "@/lib/data/cmsChains";
-import { getFacilitiesByChain } from "@/lib/data";
+import { getFacilitiesByChain, getChainFacilityRollup } from "@/lib/data";
 import { getChainOwnership } from "@/lib/ownershipOverrides";
 import { CmsChainProfileView } from "@/components/CmsChainProfileView";
 
@@ -33,8 +33,11 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
     }
     const cmsProfile = getCmsChainProfile(params.id);
     if (!cmsProfile) notFound();
-    const members = await getFacilitiesByChain(params.id);
-    return <CmsChainProfileView profile={cmsProfile} members={members} ownership={getChainOwnership(params.id)} />;
+    const [members, rollup] = await Promise.all([
+      getFacilitiesByChain(params.id),
+      getChainFacilityRollup(params.id),
+    ]);
+    return <CmsChainProfileView profile={cmsProfile} members={members} rollup={rollup} ownership={getChainOwnership(params.id)} />;
   }
 
   const chain = await getChain(params.id);

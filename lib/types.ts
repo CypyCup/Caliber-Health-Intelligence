@@ -70,6 +70,9 @@ export interface Facility {
   abuse_icon?: boolean;
   /** Provider changed ownership in the last 12 months (transaction signal). */
   changed_ownership_12mo?: boolean;
+  /** Staffing/turnover could not be computed from submitted PBJ data
+   *  (CMS footnote 26/27 on a turnover measure). */
+  pbj_incomplete?: boolean;
 }
 
 /** A single dated observation of one metric for one facility. */

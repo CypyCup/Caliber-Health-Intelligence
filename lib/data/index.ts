@@ -28,8 +28,11 @@ export type {
 
 const impl = process.env.CHI_DATA_SOURCE === "supabase" ? supabase : national;
 
-// Extra national-only accessor (chains are served by cmsChains).
+// Extra national-only accessors (chains are served by cmsChains).
 export const getFacilitiesByChain = national.getFacilitiesByChain;
+export const getChainFacilityRollup = national.getChainFacilityRollup;
+export const getAllChainFacilityRollups = national.getAllChainFacilityRollups;
+export type { ChainFacilityRollup } from "./national";
 
 export const getSeedMeta = impl.getSeedMeta;
 export const getAllFacilities = impl.getAllFacilities;

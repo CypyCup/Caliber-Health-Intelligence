@@ -34,10 +34,10 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
 
   const total = metrics["total_nurse_hprd"];
   const turnover = metrics["total_nurse_turnover_pct"];
-  const agency = metrics["contract_staff_pct"];
+  const occupancy = metrics["occupancy_rate"];
   const overall = metrics["overall_star"];
 
-  const trendKeys = ["total_nurse_hprd", "total_nurse_turnover_pct", "contract_staff_pct", "rn_hprd"];
+  const trendKeys = ["total_nurse_hprd", "total_nurse_turnover_pct", "rn_hprd", "occupancy_rate"];
   const trendMetrics = trendKeys.map((k) => metrics[k]).filter(Boolean);
 
   return (
@@ -101,11 +101,18 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
           tone={turnover && (turnover.latest_value ?? 0) > 52.5 ? "warn" : "default"}
         />
         <StatTile
-          label="Agency reliance"
-          value={agency ? formatValue(agency.latest_value, agency.definition) : "—"}
-          tone={agency && (agency.latest_value ?? 0) > 20 ? "warn" : "default"}
+          label="Occupancy"
+          value={occupancy ? formatValue(occupancy.latest_value, occupancy.definition) : "—"}
+          sub="residents ÷ certified beds"
         />
       </div>
+      {facility.pbj_incomplete && (
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <span className="font-semibold">Incomplete PBJ data.</span> CMS could not compute one or more
+          turnover/staffing measures for this facility from submitted payroll data (footnote 26/27) —
+          read its staffing figures with that caveat.
+        </p>
+      )}
 
       {/* Risk flags */}
       <section className="mt-10">
@@ -152,17 +159,20 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
         const defs = METRICS_BY_CATEGORY(cat);
         const cards = defs.map((d) => metrics[d.key]).filter(Boolean);
         if (cards.length === 0) return null;
+        // The "lagged" note only applies if an actual HCRIS metric is present;
+        // occupancy from Provider Information is current.
+        const hasLagged = cards.some((m) => m!.definition.source === "hcris");
         return (
           <section key={cat} className="mt-10">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold text-ink">{CATEGORY_LABELS[cat]}</h2>
-              {cat === "financial" && (
+              {cat === "financial" && hasLagged && (
                 <span className="pill bg-amber-50 text-amber-800 border border-amber-200">
                   Structural / lagged layer
                 </span>
               )}
             </div>
-            {cat === "financial" && (
+            {cat === "financial" && hasLagged && (
               <p className="mt-1 max-w-3xl text-sm text-ink-soft">
                 Cost-report metrics run 12–18 months behind. Related-party rent and management fees
                 can distort reported margin — read alongside the ownership structure above.

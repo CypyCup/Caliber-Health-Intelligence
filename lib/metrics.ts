@@ -277,6 +277,21 @@ export const METRIC_DEFINITIONS: MetricDefinition[] = [
     methodology_note: "Sum of CMP amounts; excludes penalties under appeal where flagged by CMS.",
   },
 
+  // --- Occupancy (current, from Provider Information) -----------------------
+  {
+    key: "occupancy_rate",
+    label: "Occupancy",
+    short_label: "Occupancy %",
+    unit: "% of beds",
+    category: "financial",
+    source: "provider",
+    cadence: "Monthly",
+    higher_is_better: true,
+    precision: 1,
+    description: "Average daily residents as a share of certified beds (current, from Provider Information).",
+    methodology_note: "Computed as avg residents per day ÷ certified beds; capped at 100% to suppress reporting anomalies.",
+  },
+
   // --- Financial (structural / lagged layer) --------------------------------
   {
     key: "occupancy_pct",

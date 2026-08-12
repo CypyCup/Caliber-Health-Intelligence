@@ -180,6 +180,51 @@ export async function getFacilitiesByChain(chainId: string): Promise<{ facility:
     .map((f) => ({ facility: f, flags: fb[f.ccn] ?? [] }));
 }
 
+// --- Chain roll-ups computed FROM the facility list ------------------------
+// These are chain-level metrics CMS's chain file does not provide: they are
+// derived by CHI from the individual facilities.
+export interface ChainFacilityRollup {
+  facility_count: number;
+  total_beds: number;
+  /** Bed-weighted occupancy: sum(residents) / sum(beds). */
+  avg_occupancy_pct: number | null;
+  /** Facilities whose PBJ-based staffing/turnover could not be computed (fn 26/27). */
+  facilities_missing_pbj: number;
+  missing_pbj_pct: number;
+}
+
+function rollupFrom(members: Facility[]): ChainFacilityRollup {
+  let beds = 0, res = 0, missing = 0;
+  for (const f of members) {
+    if (f.certified_beds > 0) { beds += f.certified_beds; res += f.avg_residents_per_day; }
+    if (f.pbj_incomplete) missing += 1;
+  }
+  return {
+    facility_count: members.length,
+    total_beds: beds,
+    avg_occupancy_pct: beds ? Math.min(round((100 * res) / beds, 1), 100) : null,
+    facilities_missing_pbj: missing,
+    missing_pbj_pct: members.length ? Math.round((100 * missing) / members.length) : 0,
+  };
+}
+
+export async function getChainFacilityRollup(chainId: string): Promise<ChainFacilityRollup> {
+  return rollupFrom(facilities().filter((f) => f.chain_id === chainId));
+}
+
+let _rollups: Record<string, ChainFacilityRollup> | null = null;
+/** All chains' facility-derived roll-ups, computed in one pass and cached. */
+export async function getAllChainFacilityRollups(): Promise<Record<string, ChainFacilityRollup>> {
+  if (_rollups) return _rollups;
+  const groups: Record<string, Facility[]> = {};
+  for (const f of facilities()) {
+    if (f.chain_id) (groups[f.chain_id] ||= []).push(f);
+  }
+  _rollups = {};
+  for (const [id, members] of Object.entries(groups)) _rollups[id] = rollupFrom(members);
+  return _rollups;
+}
+
 export async function searchFacilities(params: SearchParams = {}): Promise<FacilitySearchRow[]> {
   ensureIndex();
   const q = params.q?.trim().toLowerCase();

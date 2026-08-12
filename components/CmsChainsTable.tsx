@@ -23,6 +23,8 @@ export interface ChainRow {
   privateEquity?: boolean;
   reit?: boolean;
   publicTicker?: string;
+  occupancy_pct?: number | null;
+  missingPbjPct?: number;
 }
 
 const SEV_DOT: Record<string, string> = {
@@ -99,6 +101,7 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
               <th className="px-4 py-3 font-medium">Overall</th>
               <th className="px-4 py-3 font-medium text-right">HPRD</th>
               <th className="px-4 py-3 font-medium text-right">Turnover</th>
+              <th className="px-4 py-3 font-medium text-right">Occupancy</th>
               <th className="px-4 py-3 font-medium text-right">Total fines</th>
               <th className="px-4 py-3 font-medium">Flags</th>
             </tr>
@@ -114,6 +117,7 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
                     {r.publicTicker && <span className="pill bg-slate-100 text-ink-faint">{r.publicTicker}</span>}
                     {(r.sff ?? 0) >= 1 && <span className="pill bg-red-50 text-risk-critical border border-red-200">{Math.round(r.sff!)} SFF</span>}
                     {(r.abuse_count ?? 0) >= 1 && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">{Math.round(r.abuse_count!)} abuse</span>}
+                    {(r.missingPbjPct ?? 0) >= 25 && <span className="pill bg-amber-50 text-amber-800 border border-amber-200" title="Share of facilities with incomplete PBJ data">{r.missingPbjPct}% incomplete PBJ</span>}
                     <span className="pill bg-slate-100 text-ink-faint">{r.num_states ?? "—"} states</span>
                   </div>
                 </td>
@@ -123,6 +127,7 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
                   {r.total_nurse_hprd?.toFixed(2) ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-right stat-num">{r.turnover_pct != null ? `${r.turnover_pct.toFixed(0)}%` : "—"}</td>
+                <td className="px-4 py-3 text-right stat-num">{r.occupancy_pct != null ? `${r.occupancy_pct.toFixed(0)}%` : "—"}</td>
                 <td className="px-4 py-3 text-right stat-num">{r.fines_total_usd != null ? `$${Math.round(r.fines_total_usd).toLocaleString("en-US")}` : "—"}</td>
                 <td className="px-4 py-3">
                   {r.flagCount === 0 ? (

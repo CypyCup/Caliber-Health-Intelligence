@@ -91,6 +91,10 @@ def main() -> None:
                 archive_rows.append({"ccn": ccn, **{str(i): row[i] for i in (0, 1, 18, 19, 32, 50)}})
                 chain_cid = row[19].strip()
                 chain_id = f"cms-{chain_cid}" if chain_cid else None
+                # Missing/incomplete PBJ: CMS footnotes 26/27 on the turnover
+                # measures (total nursing, RN, administrator) mean staffing/
+                # turnover could not be computed from submitted PBJ data.
+                pbj_incomplete = any(row[i].strip() in ("26", "27") for i in (55, 57, 59))
                 facilities[ccn] = {
                     "ccn": ccn,
                     "name": row[1].strip(),
@@ -110,12 +114,19 @@ def main() -> None:
                     "special_focus": (row[26].strip() or None),
                     "abuse_icon": (row[27].strip().upper() == "Y"),
                     "changed_ownership_12mo": (row[29].strip().upper() == "Y"),
+                    "pbj_incomplete": pbj_incomplete,
                 }
                 vals = {}
                 for idx, key in METRIC_COLS.items():
                     val = num(row[idx])
                     if val is not None:
                         vals[key] = round(val, 4)
+                # Occupancy rate = avg residents / certified beds (Provider Info,
+                # current). Capped at 100% to suppress bed/census data anomalies.
+                beds = num(row[11])
+                residents = num(row[12])
+                if beds and beds > 0 and residents is not None:
+                    vals["occupancy_rate"] = round(min(100 * residents / beds, 100), 1)
                 values_by_period[period][ccn] = vals
         archive_capture("provider_info", archive_rows, key_fields=("ccn",))
         print(f"  ingested {period}: {len(values_by_period[period])} facilities")
