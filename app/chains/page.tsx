@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getCmsChainsDirectory, getCmsChainMeta, getCmsNational } from "@/lib/data/cmsChains";
+import { getChainOwnership } from "@/lib/ownershipOverrides";
 import { CmsChainsTable, type ChainRow } from "@/components/CmsChainsTable";
 import { formatVintage } from "@/lib/format";
 
@@ -11,23 +12,29 @@ export default async function ChainsPage() {
   const meta = getCmsChainMeta();
   const national = getCmsNational();
 
-  const rows: ChainRow[] = dir.map((r) => ({
-    id: r.chain.id,
-    name: r.chain.name,
-    num_facilities: r.chain.num_facilities,
-    num_states: r.chain.num_states,
-    overall_star: r.overall_star,
-    staffing_star: r.staffing_star,
-    total_nurse_hprd: r.total_nurse_hprd,
-    turnover_pct: r.turnover_pct,
-    fines_total_usd: r.fines_total_usd,
-    sff: r.chain.sff,
-    sff_candidates: r.chain.sff_candidates,
-    abuse_count: r.chain.abuse_count,
-    flagCount: r.flagCount,
-    topSeverity: r.topSeverity,
-    pct_for_profit: r.chain.pct_for_profit,
-  }));
+  const rows: ChainRow[] = dir.map((r) => {
+    const own = getChainOwnership(r.chain.id);
+    return {
+      id: r.chain.id,
+      name: r.chain.name,
+      num_facilities: r.chain.num_facilities,
+      num_states: r.chain.num_states,
+      overall_star: r.overall_star,
+      staffing_star: r.staffing_star,
+      total_nurse_hprd: r.total_nurse_hprd,
+      turnover_pct: r.turnover_pct,
+      fines_total_usd: r.fines_total_usd,
+      sff: r.chain.sff,
+      sff_candidates: r.chain.sff_candidates,
+      abuse_count: r.chain.abuse_count,
+      flagCount: r.flagCount,
+      topSeverity: r.topSeverity,
+      pct_for_profit: r.chain.pct_for_profit,
+      privateEquity: own?.private_equity,
+      reit: own?.reit,
+      publicTicker: own?.public_ticker,
+    };
+  });
 
   const withSff = dir.filter((r) => (r.chain.sff ?? 0) >= 1).length;
   const belowBench = dir.filter((r) => r.total_nurse_hprd != null && r.total_nurse_hprd < 3.48).length;

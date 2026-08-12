@@ -73,7 +73,7 @@ export default async function SearchPage({
                     {r.facility.name}
                   </Link>
                   <div className="text-xs text-ink-faint">
-                    {r.facility.city}, TX ·{" "}
+                    {r.facility.city}, {r.facility.state} ·{" "}
                     {r.chainName ? (
                       <Link href={`/chain/${r.facility.chain_id}`} className="hover:text-brand">{r.chainName}</Link>
                     ) : "Independent"}

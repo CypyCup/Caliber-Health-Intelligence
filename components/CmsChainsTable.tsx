@@ -20,6 +20,9 @@ export interface ChainRow {
   flagCount: number;
   topSeverity: string | null;
   pct_for_profit: number | null;
+  privateEquity?: boolean;
+  reit?: boolean;
+  publicTicker?: string;
 }
 
 const SEV_DOT: Record<string, string> = {
@@ -106,6 +109,9 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
                 <td className="px-4 py-3">
                   <Link href={`/chain/${r.id}`} className="font-medium text-brand hover:underline">{r.name}</Link>
                   <div className="mt-0.5 flex flex-wrap gap-1">
+                    {r.privateEquity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE</span>}
+                    {r.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT</span>}
+                    {r.publicTicker && <span className="pill bg-slate-100 text-ink-faint">{r.publicTicker}</span>}
                     {(r.sff ?? 0) >= 1 && <span className="pill bg-red-50 text-risk-critical border border-red-200">{Math.round(r.sff!)} SFF</span>}
                     {(r.abuse_count ?? 0) >= 1 && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">{Math.round(r.abuse_count!)} abuse</span>}
                     <span className="pill bg-slate-100 text-ink-faint">{r.num_states ?? "—"} states</span>

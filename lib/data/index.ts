@@ -3,13 +3,15 @@
 //
 // The whole app talks to these async functions. The backend is chosen ONCE here
 // by CHI_DATA_SOURCE:
-//   * "demo" (default) → lib/data/demo.ts   reads the bundled JSON seed
-//   * "supabase"       → lib/data/supabase.ts reads Postgres at national scale
+//   * default    → lib/data/national.ts   real CMS Provider Information (14,693
+//                  facilities) loaded from disk; the default facility source
+//   * "supabase" → lib/data/supabase.ts   reads Postgres at national scale
 //
+// Real chains (CMS Chain Performance Measures) are served by lib/data/cmsChains.ts.
 // Pages and components never change when the backend does, because the API is
 // async and identical across both. See docs/architecture.md.
 // ---------------------------------------------------------------------------
-import * as demo from "./demo";
+import * as national from "./national";
 import * as supabase from "./supabase";
 
 // Re-export the shared result/param types.
@@ -24,7 +26,10 @@ export type {
   ArchiveInfo,
 } from "./shared";
 
-const impl = process.env.CHI_DATA_SOURCE === "supabase" ? supabase : demo;
+const impl = process.env.CHI_DATA_SOURCE === "supabase" ? supabase : national;
+
+// Extra national-only accessor (chains are served by cmsChains).
+export const getFacilitiesByChain = national.getFacilitiesByChain;
 
 export const getSeedMeta = impl.getSeedMeta;
 export const getAllFacilities = impl.getAllFacilities;

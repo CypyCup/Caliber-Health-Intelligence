@@ -46,7 +46,7 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
       <nav className="text-xs text-ink-faint">
         <Link href="/search" className="hover:text-brand">Facilities</Link>
         <span className="mx-1">/</span>
-        <span>{facility.city}, TX</span>
+        <span>{facility.city}, {facility.state}</span>
       </nav>
 
       {/* Header */}
@@ -54,10 +54,14 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
         <div>
           <h1 className="text-3xl font-semibold text-ink">{facility.name}</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            {facility.address}, {facility.city}, TX {facility.zip} · {facility.county} County
+            {facility.address}, {facility.city}, {facility.state} {facility.zip} · {facility.county} County
           </p>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <OwnershipBadges facility={facility} owner={owner} />
+            {facility.special_focus === "SFF" && <span className="pill bg-red-50 text-risk-critical border border-red-200">Special Focus Facility</span>}
+            {facility.special_focus === "SFF Candidate" && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">SFF Candidate</span>}
+            {facility.abuse_icon && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">Abuse icon</span>}
+            {facility.changed_ownership_12mo && <span className="pill bg-amber-50 text-risk-watch border border-amber-200">Ownership change (12mo)</span>}
           </div>
           {chain && (
             <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">

@@ -27,7 +27,12 @@ export default async function ComparePage({
     Promise.all(ccns.map((c) => getFacilityProfile(c))),
   ]);
   const cols = profiles.filter((p): p is NonNullable<typeof p> => !!p);
-  const options = facilities.map((f) => ({ ccn: f.ccn, name: f.name }));
+  // Cap the type-ahead options so the datalist stays light at national scale;
+  // any facility can still be compared by arriving from search (?ccns=).
+  const options = facilities
+    .map((f) => ({ ccn: f.ccn, name: f.name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 4000);
 
   return (
     <div className="container-chi py-10">

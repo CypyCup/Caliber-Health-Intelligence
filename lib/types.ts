@@ -55,6 +55,8 @@ export interface Facility {
   certified_beds: number;
   avg_residents_per_day: number;
   chain_id?: string;
+  /** Chain display name carried on the facility (from CMS Provider Information). */
+  chain_name?: string;
   owner_id?: string;
   /** True when we could not attribute the facility to a chain. */
   independent: boolean;
@@ -62,6 +64,12 @@ export interface Facility {
    *  affiliated-entity grouping; "inferred" = judgment-based. Inferred members
    *  are excluded from a chain's published aggregates. */
   chain_confidence?: Confidence;
+  /** CMS Special Focus status: "SFF" | "SFF Candidate" | null. */
+  special_focus?: string | null;
+  /** CMS abuse icon present. */
+  abuse_icon?: boolean;
+  /** Provider changed ownership in the last 12 months (transaction signal). */
+  changed_ownership_12mo?: boolean;
 }
 
 /** A single dated observation of one metric for one facility. */

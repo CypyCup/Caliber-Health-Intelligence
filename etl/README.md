@@ -1,22 +1,31 @@
 # ETL — Caliber Workforce Atlas
 
-Two independent paths write the same seed shape that the app consumes
-(`data/seed/texas/*.json` + `data/seed/seed_metadata.json`):
+The Atlas runs on **real CMS data** end to end. Two file-based ingesters (no
+network needed — you supply the CMS CSVs) power the live site:
 
-| Path | Script | Network? | Output |
+| Ingester | Input (drop in) | Output | Powers |
 |---|---|---|---|
-| **Demo seed** (bundled) | `build_demo_seed.py` | none | synthetic, `synthetic: true` |
-| **Real CMS seed** | `fetch_*.py` → `build_seed.py` | needs `data.cms.gov` | real, `synthetic: false` |
+| `ingest_provider_info.py` | `etl/raw/provider_info/YYYY-MM.csv` (Provider Information) | `data/seed/national/` | 14,693 real facilities + facility→chain link |
+| `ingest_chain_performance.py` | `etl/raw/chain_performance/YYYY-MM.csv` (Chain Performance Measures) | `data/seed/chains_cms/` | 635 real chains + chain measures |
 
-## Demo seed (no network, no deps)
+Download both from data.cms.gov, name each file `YYYY-MM.csv`, drop them in the
+matching `etl/raw/…` folder, and run:
 
 ```bash
-python3 etl/build_demo_seed.py
+python3 etl/ingest_provider_info.py       # facilities (+ point-in-time archive)
+python3 etl/ingest_chain_performance.py   # chains (+ point-in-time archive)
 ```
 
-Uses only the standard library. Deterministic (fixed seed). Produces fictional
-Texas facilities (`TX-DEMO-###`) so the app runs immediately. **Never** attaches
-invented numbers to real, named facilities.
+The two datasets link by **CMS Chain ID** (verified crosswalk). Add a second
+monthly vintage of either file to light up month-over-month trends and the
+archive diff automatically. PE-sponsor / REIT resolution is layered on top via
+`data/seed/overrides/chain_ownership.json` (CHI's value-add; CMS files have none).
+
+---
+
+The API-based national pipeline below (`fetch_*.py` → `build_seed.py`) is the
+alternative for pulling everything programmatically where `data.cms.gov` is
+reachable; it writes the same shapes.
 
 ## Real CMS seed — turnkey national pipeline
 

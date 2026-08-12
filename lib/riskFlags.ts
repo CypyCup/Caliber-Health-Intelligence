@@ -34,14 +34,55 @@ function fmt(n: number, precision = 2): string {
   });
 }
 
-/** Compute all fired risk flags for a facility from its resolved metrics. */
-export function computeFacilityRiskFlags(metrics: MetricMap): RiskFlag[] {
+export interface FacilitySignals {
+  special_focus?: string | null;
+  abuse_icon?: boolean;
+  changed_ownership_12mo?: boolean;
+}
+
+/** Compute all fired risk flags for a facility from its resolved metrics, plus
+ *  optional CMS facility signals (Special Focus, abuse icon, ownership change). */
+export function computeFacilityRiskFlags(metrics: MetricMap, facility?: FacilitySignals): RiskFlag[] {
   const flags: RiskFlag[] = [];
   const m = (k: string) => metrics[k];
   const v = (k: string) => {
     const rm = metrics[k];
     return rm && rm.latest_value != null ? rm.latest_value : null;
   };
+  const anyVintage = metrics["overall_star"]?.vintage_date ?? metrics["total_nurse_hprd"]?.vintage_date ?? "";
+
+  // --- CMS facility signals (Provider Information) --------------------------
+  if (facility?.special_focus === "SFF") {
+    flags.push({
+      id: "special_focus", label: "Special Focus Facility", category: "regulatory", severity: "critical",
+      metric_key: "special_focus", threshold_text: "CMS Special Focus Facility designation",
+      observed_text: "SFF", source: SOURCES.provider.name, vintage_date: anyVintage,
+      rationale: "CMS's most serious enforcement status — a persistent record of serious quality problems.",
+    });
+  } else if (facility?.special_focus === "SFF Candidate") {
+    flags.push({
+      id: "sff_candidate", label: "Special Focus Facility candidate", category: "regulatory", severity: "elevated",
+      metric_key: "special_focus", threshold_text: "CMS SFF candidate list",
+      observed_text: "SFF Candidate", source: SOURCES.provider.name, vintage_date: anyVintage,
+      rationale: "On CMS's SFF candidate list — among the poorest performers on health inspections.",
+    });
+  }
+  if (facility?.abuse_icon) {
+    flags.push({
+      id: "abuse_icon", label: "Abuse icon", category: "regulatory", severity: "elevated",
+      metric_key: "abuse_icon", threshold_text: "CMS abuse icon flag",
+      observed_text: "flagged", source: SOURCES.provider.name, vintage_date: anyVintage,
+      rationale: "CMS flags this facility for a citation involving abuse within the last two survey cycles.",
+    });
+  }
+  if (facility?.changed_ownership_12mo) {
+    flags.push({
+      id: "ownership_change", label: "Ownership changed in last 12 months", category: "regulatory", severity: "watch",
+      metric_key: "changed_ownership_12mo", threshold_text: "CMS ownership-change flag",
+      observed_text: "recent change", source: SOURCES.provider.name, vintage_date: anyVintage,
+      rationale: "A recent change of ownership — a transaction signal, and a period where performance often shifts.",
+    });
+  }
 
   // --- Workforce: staffing vs. CMS minimum benchmark -----------------------
   const total = v("total_nurse_hprd");

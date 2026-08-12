@@ -1,24 +1,26 @@
-import seedMeta from "@/data/seed/seed_metadata.json";
+import nationalMeta from "@/data/seed/national/meta.json";
+import chainMeta from "@/data/seed/chains_cms/meta.json";
 
 /**
- * A persistent, honest banner stating that the running dataset is the synthetic
- * demo seed. This exists BECAUSE methodological honesty is CHI's moat: the app
- * never lets a viewer mistake illustrative data for real CMS data.
- * It renders only when the seed is flagged synthetic.
+ * Provenance banner. The Atlas now runs on real CMS data end to end — facilities
+ * from Provider Information and chains from the Chain Performance Measures. The
+ * one thing still in progress is PE-sponsor / REIT-landlord resolution (not in
+ * any CMS file). Honest labeling is CHI's discipline, so we say exactly that.
  */
 export function DemoDataBanner() {
-  const meta = seedMeta as { synthetic?: boolean };
-  if (!meta.synthetic) return null;
+  const nat = nationalMeta as { facilities: number; latest_period: string };
+  const chains = chainMeta as { chains: number; latest_period: string };
   return (
-    <div className="bg-amber-50 text-amber-900 border-b border-amber-200">
+    <div className="bg-emerald-50 text-emerald-900 border-b border-emerald-200">
       <div className="container-chi flex items-center gap-2 py-1.5 text-xs">
-        <span aria-hidden className="font-semibold">Mixed data</span>
-        <span className="hidden sm:inline text-amber-800">
-          — <strong>Operators &amp; chains are real CMS data</strong> (Jun 2026); facility-level detail
-          is an illustrative Texas sample pending the facility ETL. See{" "}
+        <span aria-hidden className="font-semibold">Real CMS data</span>
+        <span className="hidden sm:inline text-emerald-800">
+          — {nat.facilities.toLocaleString()} facilities (Provider Information, {nat.latest_period}) ·{" "}
+          {chains.chains.toLocaleString()} chains (Chain Performance, {chains.latest_period}). PE-sponsor /
+          REIT resolution is CHI&apos;s value-add and in progress. See{" "}
           <a href="/methodology" className="underline font-medium">Methodology</a>.
         </span>
-        <span className="sm:hidden">— chains: real CMS; facilities: demo sample.</span>
+        <span className="sm:hidden">— {nat.facilities.toLocaleString()} facilities · {chains.chains} chains, live CMS data.</span>
       </div>
     </div>
   );

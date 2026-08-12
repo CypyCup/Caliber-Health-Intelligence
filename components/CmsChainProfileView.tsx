@@ -1,12 +1,19 @@
 import Link from "next/link";
 import type { CmsChainProfile, ResolvedChainMetric } from "@/lib/data/cmsChains";
+import type { ChainOwnership } from "@/lib/ownershipOverrides";
 import { CHAIN_METRICS_BY_CATEGORY } from "@/lib/cmsChainMetrics";
 import { CATEGORY_LABELS } from "@/lib/metrics";
 import { StatTile } from "@/components/Badges";
 import { StarRating } from "@/components/StarRating";
-import { RiskFlagList } from "@/components/RiskFlags";
+import { RiskFlagList, FlagSummary } from "@/components/RiskFlags";
+import { ConfidenceBadge } from "@/components/Confidence";
 import { VintageChip } from "@/components/VintageChip";
-import type { MetricCategory } from "@/lib/types";
+import type { Facility, MetricCategory, RiskFlag } from "@/lib/types";
+
+export interface MemberFacility {
+  facility: Facility;
+  flags: RiskFlag[];
+}
 
 function fmt(v: number | null | undefined, unit: string, precision: number): string {
   if (v == null) return "—";
@@ -16,9 +23,18 @@ function fmt(v: number | null | undefined, unit: string, precision: number): str
   return unit.includes("%") ? `${n}%` : n;
 }
 
-export function CmsChainProfileView({ profile }: { profile: CmsChainProfile }) {
+export function CmsChainProfileView({
+  profile,
+  members = [],
+  ownership,
+}: {
+  profile: CmsChainProfile;
+  members?: MemberFacility[];
+  ownership?: ChainOwnership;
+}) {
   const { chain, metrics, flags, national, latestPeriod } = profile;
   const vint = `${latestPeriod}-01`;
+  const sortedMembers = [...members].sort((a, b) => b.flags.length - a.flags.length);
 
   const total = metrics["total_nurse_hprd"];
   const turn = metrics["total_nurse_turnover_pct"];
@@ -40,6 +56,10 @@ export function CmsChainProfileView({ profile }: { profile: CmsChainProfile }) {
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className="pill bg-slate-100 text-ink-soft">{Math.round(chain.num_facilities ?? 0)} facilities · {chain.num_states ?? "—"} states</span>
             {(chain.pct_for_profit ?? 0) >= 50 && <span className="pill bg-slate-100 text-ink-soft">{chain.pct_for_profit?.toFixed(0)}% for-profit</span>}
+            {ownership?.private_equity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE{ownership.pe_sponsor_name ? `: ${ownership.pe_sponsor_name}` : ""}</span>}
+            {ownership?.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT{ownership.reit_name ? `: ${ownership.reit_name}` : ""}</span>}
+            {ownership?.public_ticker && <span className="pill bg-slate-100 text-ink-soft">Public: {ownership.public_ticker}</span>}
+            {ownership && <ConfidenceBadge confidence={ownership.confidence} />}
             {(chain.sff ?? 0) >= 1 && <span className="pill bg-red-50 text-risk-critical border border-red-200">{Math.round(chain.sff!)} Special Focus</span>}
             {(chain.abuse_count ?? 0) >= 1 && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">{Math.round(chain.abuse_count!)} abuse icon</span>}
             <VintageChip vintage={vint} period={latestPeriod} />
@@ -98,6 +118,43 @@ export function CmsChainProfileView({ profile }: { profile: CmsChainProfile }) {
           </section>
         );
       })}
+
+      {/* Real member facilities (verified via CMS Chain ID) */}
+      {sortedMembers.length > 0 && (
+        <section className="mt-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-ink">Member facilities</h2>
+            <span className="text-xs text-ink-faint">{sortedMembers.length} resolved via CMS Chain ID · most at-risk first</span>
+          </div>
+          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-paper-muted text-left text-xs uppercase tracking-wide text-ink-faint">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Facility</th>
+                  <th className="px-4 py-3 font-medium">Location</th>
+                  <th className="px-4 py-3 font-medium">Mapping</th>
+                  <th className="px-4 py-3 font-medium">Risk flags</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {sortedMembers.slice(0, 100).map(({ facility, flags: ff }) => (
+                  <tr key={facility.ccn} className="hover:bg-brand-tint/40">
+                    <td className="px-4 py-3">
+                      <Link href={`/facility/${facility.ccn}`} className="font-medium text-brand hover:underline">{facility.name}</Link>
+                    </td>
+                    <td className="px-4 py-3 text-ink-soft">{facility.city}, {facility.state}</td>
+                    <td className="px-4 py-3"><ConfidenceBadge confidence={facility.chain_confidence} /></td>
+                    <td className="px-4 py-3"><FlagSummary flags={ff} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {sortedMembers.length > 100 && (
+            <p className="mt-2 text-xs text-ink-faint">Showing the 100 most at-risk of {sortedMembers.length} facilities.</p>
+          )}
+        </section>
+      )}
 
       <section className="mt-12 rounded-xl border border-slate-200 bg-paper-muted p-6">
         <h2 className="text-lg font-semibold text-ink">Underwriting this operator?</h2>

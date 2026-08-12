@@ -132,7 +132,7 @@ export default async function HomePage() {
           {highlighted.map((row) => (
             <Link key={row.facility.ccn} href={`/facility/${row.facility.ccn}`} className="card p-4 transition hover:border-brand">
               <p className="font-semibold text-ink">{row.facility.name}</p>
-              <p className="text-xs text-ink-faint">{row.facility.city}, TX · {row.chainName ?? "Independent"}</p>
+              <p className="text-xs text-ink-faint">{row.facility.city}, {row.facility.state} · {row.chainName ?? "Independent"}</p>
               <div className="mt-3 flex items-center justify-between text-sm">
                 <span className="text-ink-soft">
                   {row.total_nurse_hprd?.toFixed(2) ?? "—"} HPRD · {row.turnover_pct?.toFixed(0) ?? "—"}% turnover

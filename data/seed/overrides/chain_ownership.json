@@ -1,0 +1,7 @@
+{
+  "_comment": "Curated PE-sponsor / REIT-landlord overrides on top of the CMS chain grouping. CMS files do NOT contain PE/REIT resolution; this is CHI's value-add. Keyed by CMS chain id ('cms-<ChainID>'). Only entries listed here show a PE/REIT badge; everything else is left unresolved (honest). Set confidence 'verified' only when confirmed against a public filing (10-K/10-Q, REIT tenant disclosure, PE press release); otherwise 'inferred'. Seed entries below are limited to publicly listed operators (not PE-owned) as verifiable anchors; expand from the CMS Ownership dataset + filings.",
+  "overrides": {
+    "cms-507": { "name": "The Ensign Group", "private_equity": false, "reit": false, "public_ticker": "ENSG", "confidence": "verified", "note": "Publicly traded (NASDAQ: ENSG); not PE-owned." },
+    "cms-690": { "name": "PACS Group", "private_equity": false, "reit": false, "public_ticker": "PACS", "confidence": "verified", "note": "Publicly traded (NYSE: PACS); not PE-owned." }
+  }
+}

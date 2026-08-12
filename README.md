@@ -12,29 +12,32 @@ Built for the audiences CHI serves: **PE firms, healthcare REITs, and lenders**
 running diligence on skilled-nursing investments — and the operators who live
 these numbers.
 
-> **This repo ships with an illustrative Texas demo seed** (fictional facilities,
-> `TX-DEMO-###`) so it runs with zero setup. It is **not real CMS data**. Load
-> real data with the [ETL pipeline](etl/README.md).
+> **This repo runs on real CMS data**: 14,693 facilities (Provider Information,
+> Jul 2026) and 635 operating chains (Chain Performance Measures, Jun 2026),
+> linked by CMS Chain ID. The one thing still in progress is PE-sponsor / REIT
+> resolution, which no CMS file contains — it's layered via a curated overrides
+> file. Refresh it with the [ETL ingesters](etl/README.md).
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000  (runs on the bundled demo seed)
+npm run dev          # http://localhost:3000  (runs on the bundled real CMS data)
 ```
 
-Regenerate the demo seed (optional): `npm run seed:demo`.
+Refresh the data from newer CMS files with the [ETL ingesters](etl/README.md).
 
 ## What's here
 
 | Surface | Route | Notes |
 |---|---|---|
-| Landing / funnel | `/` | Value prop, search, chain roll-ups, sample screen |
-| Facility search | `/search` | Filter by owner type (PE/REIT), profit status, city, rating, risk flags |
-| Facility profile | `/facility/[ccn]` | Scorecards, trends, **risk flags**, ownership — *registration-gated* |
-| Chain roll-up | `/chain/[id]` | Census-weighted portfolio aggregates + risk exposure — *registration-gated* |
+| Landing / funnel | `/` | Value prop, search, real chain roll-ups, sample screen |
+| Facility search | `/search` | 14,693 real facilities; filter by owner type, profit status, city, rating, risk flags |
+| Facility profile | `/facility/[ccn]` | Real staffing/turnover/ratings/deficiencies, SFF & abuse signals, risk flags — *registration-gated* |
+| Operators & chains | `/chains` | 635 real chains, sortable/filterable, SFF/abuse exposure |
+| Chain profile | `/chain/[id]` | Real CMS chain measures + **real member facilities** (linked by CMS Chain ID) — *registration-gated* |
 | Compare | `/compare` | Side-by-side screening of up to 4 facilities |
-| Methodology | `/methodology` | Sources, two-layer data strategy, flag rules, disclaimers |
+| Methodology | `/methodology` | Sources, data assets, flag rules, disclaimers |
 
 ## What makes it defensible (Business Plan v1.3 §3)
 
