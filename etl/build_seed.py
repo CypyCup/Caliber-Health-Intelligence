@@ -85,8 +85,13 @@ def build() -> None:
         chain_id = None
         if affiliated and affiliated_id:
             chain_id = f"aff-{affiliated_id}"
+            # facility->chain membership comes from the CMS-published affiliated-
+            # entity grouping, so it is "verified"; sponsor/landlord resolution is
+            # heuristic, so the chain's resolution_confidence is "inferred".
             chains.setdefault(chain_id, {"id": chain_id, "name": affiliated,
-                                         "owner_id": chain_id, "headquarters_state": pick(row, "state")})
+                                         "owner_id": chain_id, "headquarters_state": pick(row, "state"),
+                                         "sponsor_name": None, "reit_name": None,
+                                         "resolution_confidence": "inferred"})
 
         is_pe = ccn in pe_ccns
         is_reit = ccn in reit_ccns
@@ -98,11 +103,16 @@ def build() -> None:
             "reit": is_reit,
             "reit_name": "Identified via CMS ownership records" if is_reit else None,
             "pe_sponsor_name": "Identified via CMS ownership records" if is_pe else None,
+            # PE/REIT resolution is a heuristic over CMS ownership text -> "inferred"
+            # until confirmed against a public filing (Business Plan §11).
+            "confidence": "inferred" if (is_pe or is_reit) else None,
         })
         # A chain inherits PE/REIT if any member has it.
         if chain_id:
             owners[owner_id]["private_equity"] |= is_pe
             owners[owner_id]["reit"] |= is_reit
+            if is_pe or is_reit:
+                owners[owner_id]["confidence"] = "inferred"
 
         facilities.append({
             "ccn": ccn,
@@ -118,6 +128,8 @@ def build() -> None:
             "chain_id": chain_id,
             "owner_id": owner_id,
             "independent": chain_id is None,
+            # Verified: facility->chain membership from the CMS affiliated-entity grouping.
+            "chain_confidence": ("verified" if chain_id else None),
         })
 
         # ---- current-snapshot metrics from Provider Information --------------

@@ -101,7 +101,63 @@ def write_raw(name: str, rows: list[dict]) -> str:
     with open(path, "w") as f:
         json.dump(rows, f)
     print(f"  wrote {len(rows)} rows -> {path}")
+    archive_capture(name, rows)
     return path
+
+
+def archive_capture(source: str, rows: list[dict], key_fields=("cms_certification_number_ccn", "provnum", "ccn")) -> None:
+    """Capture a point-in-time copy of a fetched CMS payload (Business Plan §3).
+
+    CMS overwrites its published files with no changelog, so each fetch is stored
+    under a capture timestamp and diffed against the most recent prior capture.
+    The manifest indexes every capture; the raw copies are the archive itself.
+    """
+    from datetime import datetime, timezone
+
+    arch_dir = os.path.join("etl", "archive", source)
+    os.makedirs(arch_dir, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+    def keyset(items: list[dict]) -> dict:
+        out = {}
+        for r in items:
+            k = next((str(r[f]) for f in key_fields if r.get(f)), None)
+            if k:
+                out[k] = r
+        return out
+
+    prior_files = sorted(f for f in os.listdir(arch_dir) if f.endswith(".json"))
+    changed = None
+    if prior_files:
+        try:
+            with open(os.path.join(arch_dir, prior_files[-1])) as pf:
+                prior = keyset(json.load(pf))
+            cur = keyset(rows)
+            changed = sum(1 for k, v in cur.items() if prior.get(k) != v) + \
+                sum(1 for k in prior if k not in cur)
+        except Exception:  # noqa: BLE001
+            changed = None
+
+    cap_path = os.path.join(arch_dir, f"{ts}.json")
+    with open(cap_path, "w") as f:
+        json.dump(rows, f)
+
+    manifest_path = os.path.join("etl", "archive", "manifest.json")
+    manifest = []
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path) as mf:
+                manifest = json.load(mf)
+        except Exception:  # noqa: BLE001
+            manifest = []
+    manifest.append({
+        "source": source, "period": None, "captured_at": ts,
+        "file_uri": cap_path, "row_count": len(rows), "changed_rows": changed,
+    })
+    with open(manifest_path, "w") as mf:
+        json.dump(manifest, mf, indent=2)
+    diff_note = f", {changed} rows changed vs prior" if changed is not None else " (first capture)"
+    print(f"  archived {len(rows)} rows -> {cap_path}{diff_note}")
 
 
 def read_raw(name: str) -> list[dict]:

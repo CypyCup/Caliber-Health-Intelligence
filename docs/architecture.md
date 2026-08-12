@@ -15,9 +15,12 @@ Next.js (App Router, RSC)  ──reads──▶  lib/data (async API)
 - **Rendering:** React Server Components. Pages are server-rendered; the only
   client components are the search box, filters, compare selector, and the
   registration wall (all under `components/`, marked `"use client"`).
-- **Data access seam:** every page calls the async functions in `lib/data`.
-  In demo mode they read the bundled JSON seed; swapping to Supabase is a change
-  **only inside `lib/data`** because the API is already async. No page changes.
+- **Data access seam:** every page calls the async functions in `lib/data`. The
+  backend is chosen once, by `CHI_DATA_SOURCE`, in `lib/data/index.ts`:
+  - `demo` (default) → `lib/data/demo.ts` reads the bundled JSON seed.
+  - `supabase` → `lib/data/supabase.ts` reads Postgres at national scale.
+  Both implement the identical async API and share all aggregation/flag/trend
+  logic via `lib/data/shared.ts`, so pages never change when the backend does.
 - **No chart library:** trends are hand-rolled inline SVG (`Sparkline`,
   `TrendChart`) so the build never depends on a chart package and both themes
   stay controllable.
@@ -57,11 +60,31 @@ the lead. Facility and chain detail pages check `isRegistered()` server-side and
 render the wall when absent. In production this becomes Supabase Auth + a `leads`
 table; the call sites don't change.
 
+## National data path (Supabase)
+
+At national scale (14,703 facilities × metrics × quarters = millions of rows) the
+JSON bundle can't hold the data, so production runs on Supabase/Postgres.
+
+- **Schema:** `supabase/schema.sql` — tables mirror `lib/types.ts`, plus SQL
+  **views** that back the read-path efficiently: `metric_latest` (latest value
+  per facility/metric), `facility_latest` (search-relevant metrics + owner/chain
+  fields pivoted per facility), `chain_directory` (census-weighted, verified-only
+  chain roll-ups), `cities`, and `archive_periods`.
+- **Bounded reads** (one facility, one chain) fetch rows and reuse the shared
+  compute helpers, so flag/aggregate logic stays single-sourced.
+- **Search** fetches a capped candidate set from `facility_latest`, then pulls
+  those facilities' snapshots to compute exact rule-based flags. PERF: for high
+  traffic, precompute a `facility_search` table during ETL (documented TODO).
+- **The archive** (Business Plan §3): `etl/` captures every CMS file vintage
+  under a timestamp and diffs it against the prior capture; `archive_manifest`
+  indexes them. `metric_snapshots` is the in-app expression of that archive and
+  is what makes trends possible.
+
 ## Production stack (per Business Plan §11)
 
 Supabase (Postgres + Auth) · Vercel (hosting) · Stripe (research subscription,
-**not** the Atlas) · Python ETL for quarterly CMS refreshes. Set env vars from
-`.env.example` and run `supabase/schema.sql` + `etl/load_supabase.py`.
+**not** the Atlas) · Python ETL for quarterly CMS refreshes. Copy `.env.example`,
+run `supabase/schema.sql`, then `python3 etl/run_national.py --state ALL --load`.
 
 ## Security note
 

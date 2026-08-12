@@ -6,6 +6,7 @@ import { StarRating } from "@/components/StarRating";
 import { BENCHMARKS } from "@/lib/benchmarks";
 
 export const metadata: Metadata = { title: "Operators & chains" };
+export const revalidate = 3600;
 
 export default async function ChainsPage() {
   const rows = await getChainsDirectory();

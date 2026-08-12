@@ -5,6 +5,7 @@ import { getSeedMeta, getArchiveInfo } from "@/lib/data";
 import { NATIONAL_SCOPE } from "@/lib/scope";
 
 export const metadata: Metadata = { title: "Methodology & sources" };
+export const revalidate = 3600;
 
 export default async function MethodologyPage() {
   const [meta, archive] = await Promise.all([getSeedMeta(), getArchiveInfo()]);

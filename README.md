@@ -1,10 +1,12 @@
 # Caliber Workforce Atlas
 
 The free, public-data workforce-intelligence surface for **Caliber Health
-Intelligence** — turning CMS nursing-home data into an underwriting-grade view of
-staffing, turnover, agency reliance, regulatory exposure, and financial pressure,
-**with the vintage on every number** and the quarter-over-quarter / year-over-year
-trends CMS Care Compare doesn't show.
+Intelligence** — every U.S. nursing home resolved to the **chains, PE sponsors,
+and REIT landlords** that own it, on a **point-in-time archive** of every quarter
+CMS publishes and then overwrites. That's staffing, turnover, agency reliance,
+regulatory exposure, and financial pressure at the level an underwriter decides
+on — with the quarter-over-quarter and year-over-year trends CMS Care Compare
+has no memory of.
 
 Built for the audiences CHI serves: **PE firms, healthcare REITs, and lenders**
 running diligence on skilled-nursing investments — and the operators who live
@@ -34,17 +36,23 @@ Regenerate the demo seed (optional): `npm run seed:demo`.
 | Compare | `/compare` | Side-by-side screening of up to 4 facilities |
 | Methodology | `/methodology` | Sources, two-layer data strategy, flag rules, disclaimers |
 
-## The three product commitments (from the CHI plan)
+## What makes it defensible (Business Plan v1.3 §3)
 
-1. **Vintage on every metric.** Staffing is current to the latest PBJ quarter;
-   cost-report financials lag 12–18 months — and the UI says which is which, on
-   every number. This methodological honesty is CHI's moat (Business Plan §3).
-2. **Trends, not snapshots.** A time-series data model (`metric_snapshots`) gives
-   QoQ and YoY movement on every metric and every chain — the one thing Care
-   Compare doesn't do (§4.1).
+The moat is a **proprietary data asset**, not a disclosure convention:
+
+1. **The entity-resolution crosswalk.** Facilities resolved to operating chain,
+   PE sponsor, and REIT landlord (14,703 → 616) — the level an investor question
+   is asked at. Every mapping is flagged **verified** or **inferred**; inferred
+   mappings are excluded from published chain-level figures (§11).
+2. **The point-in-time archive.** CMS overwrites its files with no changelog; the
+   ETL captures every vintage, so the Atlas shows history — and QoQ/YoY trends —
+   that Care Compare can't (`metric_snapshots` is its in-app expression).
 3. **Transparent risk flags, not a black-box score.** Every flag ties to one
-   disclosed CMS metric and one published threshold. The analytical *synthesis*
-   is deliberately reserved for CHI's paid quarterly research (§4.1).
+   disclosed CMS metric and one published threshold; the analytical *synthesis*
+   is reserved for CHI's paid quarterly research (§4.1).
+
+**Vintage disclosure** remains on every metric — but as the **quality floor** (§4),
+not the headline.
 
 ## Data
 
@@ -63,12 +71,20 @@ npm run build       # production build
 npm run typecheck   # tsc --noEmit
 ```
 
-### Going to production
+### Going to production (national data)
 
-1. `supabase/schema.sql` in a Supabase project.
-2. Run the [real CMS ETL](etl/README.md), then `etl/load_supabase.py`.
-3. Copy `.env.example` → `.env.local`, set Supabase vars, `CHI_DATA_SOURCE=supabase`.
-4. Deploy to Vercel.
+National scale (14,703 facilities × metrics × quarters) runs on Supabase/Postgres,
+not the JSON bundle.
+
+1. Apply `supabase/schema.sql` in a Supabase project (tables + read-path views).
+2. Build + load the real national data in one command (needs `data.cms.gov` reachable):
+   ```bash
+   SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… python3 etl/run_national.py --state ALL --load
+   ```
+   See [`etl/README.md`](etl/README.md) for PBJ downloads and the archive step.
+3. Copy `.env.example` → `.env.local`; set `CHI_DATA_SOURCE=supabase`,
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+4. Deploy to Vercel. The data layer switches backends with zero page changes.
 
 ## Disclaimer
 

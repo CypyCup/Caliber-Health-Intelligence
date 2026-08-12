@@ -31,6 +31,7 @@ __pycache__/
 venv/
 etl/.cache/
 etl/raw/
+etl/archive/
 
 # captured demo leads (never commit lead data)
 data/leads.local.json

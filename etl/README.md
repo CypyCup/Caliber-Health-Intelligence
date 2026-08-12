@@ -18,39 +18,70 @@ Uses only the standard library. Deterministic (fixed seed). Produces fictional
 Texas facilities (`TX-DEMO-###`) so the app runs immediately. **Never** attaches
 invented numbers to real, named facilities.
 
-## Real CMS seed
+## Real CMS seed — turnkey national pipeline
 
-Requires `requests` and network access to `data.cms.gov`:
+Requires `requests` and network access to `data.cms.gov`. One command runs the
+whole thing (fetch + point-in-time archive + crosswalk + seed):
 
 ```bash
 pip install -r etl/requirements.txt
 
-# 1. Provider Data Catalog pulls (Care Compare, ownership, deficiencies, penalties)
-python3 etl/fetch_provider_info.py
-python3 etl/fetch_ownership.py
-python3 etl/fetch_deficiencies.py
-python3 etl/fetch_penalties.py
+# National model of all ~14,703 facilities / ~616 chains.
+# (PBJ needs local CSVs; add --skip-pbj for a first run without them.)
+python3 etl/run_national.py --state ALL
 
-# 2. PBJ staffing — download the quarterly CSVs first (see fetch_pbj.py docstring),
-#    drop them in etl/raw/pbj/<QUARTER>.csv, then:
-python3 etl/fetch_pbj.py
-
-# 3. Join everything into the seed the app reads
-python3 etl/build_seed.py
+# ...or a single state:
+python3 etl/run_national.py --state TX
 ```
 
-Set the state / quarters in `config.py` (`STATE = "TX"`; `STATE = None` for national).
+Prefer to run the steps by hand? They are:
+
+```bash
+python3 etl/fetch_provider_info.py   # Care Compare (+ archive capture)
+python3 etl/fetch_ownership.py       # ownership -> PE/REIT heuristic
+python3 etl/fetch_deficiencies.py    # citations, Immediate Jeopardy
+python3 etl/fetch_penalties.py       # CMPs
+# PBJ staffing: download the quarterly CSVs (see fetch_pbj.py), drop them in
+# etl/raw/pbj/<QUARTER>.csv, then:
+python3 etl/fetch_pbj.py
+python3 etl/build_seed.py            # join -> facilities/owners/chains/snapshots
+```
+
+Set the state / quarters in `config.py` (`STATE = "TX"`; `STATE = None` for national),
+or pass `--state` to `run_national.py`.
+
+### The point-in-time archive
+
+Every Provider Data Catalog fetch is captured under a UTC timestamp in
+`etl/archive/<source>/` and diffed against the prior capture; `etl/archive/manifest.json`
+indexes them. CMS overwrites its files with no changelog, so this capture is the
+one step whose value is permanently lost if skipped (Business Plan §3) — run the
+pipeline on a schedule.
+
+### Crosswalk confidence
+
+`build_seed.py` marks facility→chain membership **verified** (from the CMS
+affiliated-entity grouping) and sponsor/REIT resolution **inferred** (heuristic
+over CMS ownership text). Inferred mappings are excluded from published
+chain-level figures in the app. Curate verified sponsor/landlord overrides as the
+crosswalk matures.
 
 ### Load into Supabase (production)
 
 ```bash
-# after running supabase/schema.sql in your project
+# 1. Apply the schema (tables + read-path views) in your Supabase project:
+#    run supabase/schema.sql in the SQL editor.
+# 2. Build + load in one command:
 export SUPABASE_URL=https://xxxx.supabase.co
 export SUPABASE_SERVICE_ROLE_KEY=...     # service role, server-side only
+python3 etl/run_national.py --state ALL --load
+
+# ...or load an already-built seed on its own:
 python3 etl/load_supabase.py
 ```
 
-Then set `CHI_DATA_SOURCE=supabase` for the app.
+Then set `CHI_DATA_SOURCE=supabase` (and `NEXT_PUBLIC_SUPABASE_URL` +
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`) for the app to serve the national data.
 
 ## Vintage discipline
 

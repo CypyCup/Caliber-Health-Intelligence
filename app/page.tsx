@@ -4,6 +4,9 @@ import { SearchBox } from "@/components/SearchBox";
 import { PanelCTA } from "@/components/PanelCTA";
 import { NATIONAL_SCOPE } from "@/lib/scope";
 
+// ISR: serve fast, refresh hourly so Supabase-backed deployments aren't stale.
+export const revalidate = 3600;
+
 export default async function HomePage() {
   const [meta, topRisk, chains, archive] = await Promise.all([
     getSeedMeta(),
