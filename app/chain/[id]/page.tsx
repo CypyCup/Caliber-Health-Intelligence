@@ -9,13 +9,31 @@ import { StarRating } from "@/components/StarRating";
 import { FlagSummary } from "@/components/RiskFlags";
 import { ConfidenceBadge } from "@/components/Confidence";
 import { BENCHMARKS } from "@/lib/benchmarks";
+import { getCmsChainById, getCmsChainProfile } from "@/lib/data/cmsChains";
+import { CmsChainProfileView } from "@/components/CmsChainProfileView";
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  if (params.id.startsWith("cms-")) {
+    const c = getCmsChainById(params.id);
+    return { title: c ? c.name : "Operator" };
+  }
   const c = await getChain(params.id);
   return { title: c ? c.name : "Operator" };
 }
 
 export default async function ChainPage({ params }: { params: { id: string } }) {
+  // Real CMS chains (from the Chain Performance Measures) render their own view.
+  if (params.id.startsWith("cms-")) {
+    const cms = getCmsChainById(params.id);
+    if (!cms) notFound();
+    if (!isRegistered()) {
+      return <RegistrationWall nextLabel={`the CMS performance profile for ${cms.name}`} />;
+    }
+    const cmsProfile = getCmsChainProfile(params.id);
+    if (!cmsProfile) notFound();
+    return <CmsChainProfileView profile={cmsProfile} />;
+  }
+
   const chain = await getChain(params.id);
   if (!chain) notFound();
 

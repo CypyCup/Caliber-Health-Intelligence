@@ -12,13 +12,13 @@ export function DemoDataBanner() {
   return (
     <div className="bg-amber-50 text-amber-900 border-b border-amber-200">
       <div className="container-chi flex items-center gap-2 py-1.5 text-xs">
-        <span aria-hidden className="font-semibold">Demo data</span>
+        <span aria-hidden className="font-semibold">Mixed data</span>
         <span className="hidden sm:inline text-amber-800">
-          — illustrative Texas sample (fictional facilities). Not real CMS data. Load real data via
-          the ETL pipeline. See{" "}
+          — <strong>Operators &amp; chains are real CMS data</strong> (Jun 2026); facility-level detail
+          is an illustrative Texas sample pending the facility ETL. See{" "}
           <a href="/methodology" className="underline font-medium">Methodology</a>.
         </span>
-        <span className="sm:hidden">— illustrative sample, not real CMS data.</span>
+        <span className="sm:hidden">— chains: real CMS; facilities: demo sample.</span>
       </div>
     </div>
   );

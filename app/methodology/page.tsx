@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { SOURCES } from "@/lib/metrics";
 import { BENCHMARKS } from "@/lib/benchmarks";
 import { getSeedMeta, getArchiveInfo } from "@/lib/data";
-import { NATIONAL_SCOPE } from "@/lib/scope";
+import { getCmsChainMeta } from "@/lib/data/cmsChains";
 
 export const metadata: Metadata = { title: "Methodology & sources" };
 export const revalidate = 3600;
 
 export default async function MethodologyPage() {
   const [meta, archive] = await Promise.all([getSeedMeta(), getArchiveInfo()]);
+  const chainMeta = getCmsChainMeta();
   const sources = Object.values(SOURCES);
 
   return (
@@ -48,7 +49,7 @@ export default async function MethodologyPage() {
           <Asset
             badge="Resolution"
             title="The entity-resolution layer"
-            body={`A CMS certification number identifies a building, not an owner. Resolving ${NATIONAL_SCOPE.facilities.toLocaleString()} facilities into ${NATIONAL_SCOPE.chains.toLocaleString()} operating chains — and those chains into parent, sponsor, and REIT-landlord relationships — is judgment-heavy work no public file provides in usable form. Every mapping carries a verified-or-inferred flag, and inferred mappings are excluded from published chain-level figures. This is the level at which an investor question is actually asked.`}
+            body={`A CMS certification number identifies a building, not an owner. The Operators & chains directory is live on real CMS data — the Nursing Home Chain Performance Measures — resolving ${chainMeta.national_facilities.toLocaleString()} facilities into ${chainMeta.chains.toLocaleString()} operating chains (vintage ${chainMeta.latest_period}). CHI's value-add on top is resolving those chains into parent, sponsor, and REIT-landlord relationships — judgment-heavy work no public file provides — with every mapping flagged verified or inferred, and inferred mappings excluded from published chain-level figures. This is the level at which an investor question is actually asked.`}
           />
           <Asset
             badge="Currency"

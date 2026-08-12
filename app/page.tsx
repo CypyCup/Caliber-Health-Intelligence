@@ -1,19 +1,19 @@
 import Link from "next/link";
-import { getSeedMeta, searchFacilities, getChainsDirectory, getArchiveInfo } from "@/lib/data";
+import { getSeedMeta, searchFacilities } from "@/lib/data";
+import { getCmsChainsDirectory, getCmsChainMeta } from "@/lib/data/cmsChains";
 import { SearchBox } from "@/components/SearchBox";
 import { PanelCTA } from "@/components/PanelCTA";
-import { NATIONAL_SCOPE } from "@/lib/scope";
 
 // ISR: serve fast, refresh hourly so Supabase-backed deployments aren't stale.
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const [meta, topRisk, chains, archive] = await Promise.all([
+  const [meta, topRisk] = await Promise.all([
     getSeedMeta(),
     searchFacilities({ hasFlags: true }),
-    getChainsDirectory(),
-    getArchiveInfo(),
   ]);
+  const chainMeta = getCmsChainMeta();
+  const chains = getCmsChainsDirectory();
   const highlighted = topRisk.slice(0, 6);
   const topChains = chains.slice(0, 6);
 
@@ -28,9 +28,9 @@ export default async function HomePage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-ink-soft">
             The Caliber Workforce Atlas sits on a proprietary data asset:{" "}
-            <strong>{NATIONAL_SCOPE.facilities.toLocaleString()}</strong> facilities resolved into{" "}
-            <strong>{NATIONAL_SCOPE.chains.toLocaleString()}</strong> operating chains, and a
-            point-in-time archive of every quarter CMS publishes and then overwrites. That&apos;s the
+            <strong>{chainMeta.national_facilities.toLocaleString()}</strong> facilities resolved into{" "}
+            <strong>{chainMeta.chains.toLocaleString()}</strong> operating chains, and a
+            point-in-time archive of every release CMS publishes and then overwrites. That&apos;s the
             staffing, turnover, and ownership picture at the level an underwriter actually decides on.
           </p>
 
@@ -110,14 +110,13 @@ export default async function HomePage() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold text-ink">{c.chain.name}</p>
                   <div className="flex gap-1">
-                    {c.private_equity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE</span>}
-                    {c.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT</span>}
+                    {(c.chain.sff ?? 0) >= 1 && <span className="pill bg-red-50 text-risk-critical border border-red-200">{Math.round(c.chain.sff!)} SFF</span>}
                   </div>
                 </div>
-                <p className="mt-1 text-xs text-ink-faint">{c.verified_count} facilities · {c.avg_total_nurse_hprd?.toFixed(2) ?? "—"} HPRD</p>
+                <p className="mt-1 text-xs text-ink-faint">{Math.round(c.chain.num_facilities ?? 0)} facilities · {c.total_nurse_hprd?.toFixed(2) ?? "—"} HPRD · {c.turnover_pct?.toFixed(0) ?? "—"}% turnover</p>
                 <p className="mt-2 text-xs">
-                  <span className="font-medium text-risk-high">{c.below_benchmark}</span>
-                  <span className="text-ink-faint"> below CMS staffing benchmark</span>
+                  <span className="font-medium text-risk-high">{c.flagCount}</span>
+                  <span className="text-ink-faint"> risk flag{c.flagCount === 1 ? "" : "s"}</span>
                 </p>
               </Link>
             ))}
@@ -172,10 +171,10 @@ export default async function HomePage() {
               </Link>
             </div>
             <dl className="grid grid-cols-2 gap-4 text-sm">
-              <Stat label="Facilities (national model)" value={NATIONAL_SCOPE.facilities.toLocaleString()} />
-              <Stat label="Operating chains" value={NATIONAL_SCOPE.chains.toLocaleString()} />
-              <Stat label="Archive depth (this demo)" value={`${archive.depth} quarters`} />
-              <Stat label="Loaded in this demo" value={`${meta.facilities} facilities`} />
+              <Stat label="Facilities (national, CMS)" value={chainMeta.national_facilities.toLocaleString()} />
+              <Stat label="Operating chains (CMS)" value={chainMeta.chains.toLocaleString()} />
+              <Stat label="Chain data vintage" value="Jun 2026" />
+              <Stat label="Facility demo (this build)" value={`${meta.facilities} facilities`} />
             </dl>
           </div>
         </div>
