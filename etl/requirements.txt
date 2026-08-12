@@ -1,0 +1,4 @@
+# Caliber Workforce Atlas — ETL dependencies.
+# The demo seed generator (build_demo_seed.py) needs NONE of these — it uses
+# only the Python standard library. These are for the real CMS pipeline.
+requests>=2.31,<3
