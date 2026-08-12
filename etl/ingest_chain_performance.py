@@ -23,9 +23,8 @@ import csv
 import glob
 import json
 import os
-import re
 
-from common import archive_capture
+from common import archive_capture, period_from_filename
 
 RAW_DIR = os.path.join("etl", "raw", "chain_performance")
 OUT_DIR = os.path.join("data", "seed", "chains_cms")
@@ -62,23 +61,19 @@ def clean(v: str):
         return None
 
 
-def period_from_path(path: str) -> str:
-    m = re.search(r"(\d{4})-(\d{2})", os.path.basename(path))
-    return f"{m.group(1)}-{m.group(2)}" if m else os.path.splitext(os.path.basename(path))[0]
-
-
 def main() -> None:
     files = sorted(glob.glob(os.path.join(RAW_DIR, "*.csv")))
     if not files:
-        raise SystemExit(f"No CSVs in {RAW_DIR}/ (name them YYYY-MM.csv).")
+        raise SystemExit(f"No CSVs in {RAW_DIR}/ (drop the Chain Performance CSVs there).")
 
     chains: dict[str, dict] = {}
     metrics: list[dict] = []
     national: dict = {}
     periods: list[str] = []
 
-    for path in files:
-        period = period_from_path(path)
+    # Oldest -> newest so the newest file wins for descriptor fields.
+    for path in sorted(files, key=period_from_filename):
+        period = period_from_filename(path)
         periods.append(period)
         vintage = f"{period}-01"
         with open(path, encoding="utf-8-sig") as f:

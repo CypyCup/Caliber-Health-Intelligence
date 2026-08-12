@@ -17,6 +17,9 @@ export function MetricCard({ metric }: { metric: ResolvedMetric }) {
   const isAnnual = def.cadence.toLowerCase().includes("annual");
   const yoyTone = trendTone(metric.yoy_delta, def);
   const qoqTone = trendTone(metric.qoq_delta, def);
+  // Label the short-period delta by the actual period granularity: monthly
+  // files -> MoM, quarterly -> QoQ.
+  const shortLabel = /^\d{4}-\d{2}$/.test(metric.latest_period) ? "MoM" : "QoQ";
 
   return (
     <div className="card p-4">
@@ -34,8 +37,8 @@ export function MetricCard({ metric }: { metric: ResolvedMetric }) {
         </span>
         <div className="flex flex-col text-xs">
           {!isAnnual && (
-            <span className={`${TONE_TEXT[qoqTone]}`} title="Quarter-over-quarter change">
-              {trendArrow(metric.qoq_delta)} {formatDelta(metric.qoq_delta, def)} QoQ
+            <span className={`${TONE_TEXT[qoqTone]}`} title={`${shortLabel === "MoM" ? "Month" : "Quarter"}-over-${shortLabel === "MoM" ? "month" : "quarter"} change`}>
+              {trendArrow(metric.qoq_delta)} {formatDelta(metric.qoq_delta, def)} {shortLabel}
             </span>
           )}
           <span className={`${TONE_TEXT[yoyTone]}`} title="Year-over-year change">

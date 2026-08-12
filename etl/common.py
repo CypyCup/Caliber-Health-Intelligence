@@ -166,3 +166,31 @@ def read_raw(name: str) -> list[dict]:
     path = os.path.join(RAW_DIR, f"{name}.json")
     with open(path) as f:
         return json.load(f)
+
+
+_MONTHS = {
+    "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
+    "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12",
+}
+
+
+def period_from_filename(path: str) -> str:
+    """Infer a 'YYYY-MM' period from a filename, tolerant of CMS's native names.
+
+    Handles: 2026-07, 2026_07, 202607, and month names in any position, e.g.
+    'NH_ProviderInfo_Jul2026.csv', 'Nursing_Home_Chain_Performance_Measures_Jun_2026.csv',
+    'July 2026'. Falls back to the filename stem if nothing matches.
+    """
+    import re
+
+    base = os.path.basename(path)
+    m = re.search(r"(20\d{2})[-_ ]?(0[1-9]|1[0-2])", base)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}"
+    m = re.search(r"([A-Za-z]{3,9})[-_ ]?(20\d{2})", base)
+    if m and m.group(1)[:3].lower() in _MONTHS:
+        return f"{m.group(2)}-{_MONTHS[m.group(1)[:3].lower()]}"
+    m = re.search(r"(20\d{2})[-_ ]?([A-Za-z]{3,9})", base)
+    if m and m.group(2)[:3].lower() in _MONTHS:
+        return f"{m.group(1)}-{_MONTHS[m.group(2)[:3].lower()]}"
+    return os.path.splitext(base)[0]
