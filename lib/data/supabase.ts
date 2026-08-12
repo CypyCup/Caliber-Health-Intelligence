@@ -15,7 +15,7 @@ import {
   buildFacilityProfile,
   buildSearchRow,
   matchesQuery,
-  sortSearchRows,
+  refineSearchRows,
   type ArchiveInfo,
   type ChainDirectoryRow,
   type ChainProfile,
@@ -181,7 +181,7 @@ export async function searchFacilities(params: SearchParams = {}): Promise<Facil
     if (params.hasFlags && row.flagCount === 0) continue;
     rows.push(row);
   }
-  return sortSearchRows(rows);
+  return refineSearchRows(rows, params);
 }
 
 export async function getCities(): Promise<string[]> {

@@ -75,6 +75,8 @@ export interface FacilitySearchRow {
   topSeverity: RiskFlag["severity"] | null;
 }
 
+export type SortField = "risk" | "name" | "hprd" | "turnover" | "occupancy" | "overall";
+
 export interface SearchParams {
   q?: string;
   city?: string;
@@ -83,6 +85,12 @@ export interface SearchParams {
   minStar?: number;
   hasFlags?: boolean;
   chainId?: string;
+  /** PBJ completeness filter. */
+  pbj?: "complete" | "incomplete";
+  /** Occupancy band filter: "u70" | "u80" | "u90" | "gte90". */
+  occ?: string;
+  sort?: SortField;
+  dir?: "asc" | "desc";
 }
 
 export interface ChainDirectoryRow {
@@ -226,6 +234,51 @@ export function sortSearchRows(rows: FacilitySearchRow[]): FacilitySearchRow[] {
     const sb = b.topSeverity ? SEV_RANK[b.topSeverity] : 0;
     if (sb !== sa) return sb - sa;
     return b.flagCount - a.flagCount;
+  });
+}
+
+/** Apply the PBJ / occupancy filters and the chosen sort to a row set. Shared by
+ *  both backends so filtering + sorting act on the FULL filtered set, not just
+ *  the visible page. Caller slices afterward. */
+export function refineSearchRows(rows: FacilitySearchRow[], params: SearchParams): FacilitySearchRow[] {
+  let out = rows;
+  if (params.pbj === "incomplete") out = out.filter((r) => r.facility.pbj_incomplete);
+  else if (params.pbj === "complete") out = out.filter((r) => !r.facility.pbj_incomplete);
+
+  if (params.occ) {
+    out = out.filter((r) => {
+      const o = r.occupancy;
+      if (o == null) return false;
+      switch (params.occ) {
+        case "u70": return o < 70;
+        case "u80": return o < 80;
+        case "u90": return o < 90;
+        case "gte90": return o >= 90;
+        default: return true;
+      }
+    });
+  }
+
+  const field: SortField = params.sort ?? "risk";
+  if (field === "risk") return sortSearchRows([...out]);
+
+  const dir = params.dir ?? (field === "name" ? "asc" : "desc");
+  const mult = dir === "asc" ? 1 : -1;
+  const numCmp = (av: number | null, bv: number | null): number => {
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1; // nulls always last
+    if (bv == null) return -1;
+    return mult * (av - bv);
+  };
+  return [...out].sort((a, b) => {
+    switch (field) {
+      case "name": return mult * a.facility.name.localeCompare(b.facility.name);
+      case "hprd": return numCmp(a.total_nurse_hprd, b.total_nurse_hprd);
+      case "turnover": return numCmp(a.turnover_pct, b.turnover_pct);
+      case "occupancy": return numCmp(a.occupancy, b.occupancy);
+      case "overall": return numCmp(a.overall_star, b.overall_star);
+      default: return 0;
+    }
   });
 }
 

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getCities, searchFacilities, type SearchParams } from "@/lib/data";
 import { SearchBox } from "@/components/SearchBox";
 import { SearchFilters } from "@/components/SearchFilters";
+import { SortHeader } from "@/components/SortHeader";
 import { StarRating } from "@/components/StarRating";
 
 export const metadata: Metadata = { title: "Explore facilities" };
@@ -30,6 +31,10 @@ export default async function SearchPage({
     minStar: s("minStar") ? Number(s("minStar")) : undefined,
     hasFlags: s("hasFlags") === "1",
     chainId: s("chainId"),
+    pbj: (s("pbj") as SearchParams["pbj"]) || undefined,
+    occ: s("occ"),
+    sort: (s("sort") as SearchParams["sort"]) || undefined,
+    dir: (s("dir") as SearchParams["dir"]) || undefined,
   };
 
   const [rows, cities] = await Promise.all([searchFacilities(params), getCities()]);
@@ -39,8 +44,8 @@ export default async function SearchPage({
       <p className="kicker">Explore</p>
       <h1 className="mt-1 text-3xl font-semibold text-ink">Skilled nursing facilities</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        Sorted by risk exposure — most severe flags first. Every metric shown carries its vintage on
-        the facility page.
+        Default sort is risk exposure — click any column to re-sort, and filter by occupancy or PBJ
+        completeness. Every metric carries its vintage on the facility page.
       </p>
 
       <div className="mt-6 space-y-3">
@@ -57,14 +62,14 @@ export default async function SearchPage({
         <table className="w-full text-sm">
           <thead className="bg-paper-muted text-left text-xs uppercase tracking-wide text-ink-faint">
             <tr>
-              <th className="px-4 py-3 font-medium">Facility</th>
+              <th className="px-4 py-3"><SortHeader field="name" label="Facility" /></th>
               <th className="px-4 py-3 font-medium">Owner</th>
-              <th className="px-4 py-3 font-medium text-right">Total HPRD</th>
-              <th className="px-4 py-3 font-medium text-right">Turnover</th>
-              <th className="px-4 py-3 font-medium text-right">Occupancy</th>
+              <th className="px-4 py-3 text-right"><SortHeader field="hprd" label="Total HPRD" align="right" /></th>
+              <th className="px-4 py-3 text-right"><SortHeader field="turnover" label="Turnover" align="right" /></th>
+              <th className="px-4 py-3 text-right"><SortHeader field="occupancy" label="Occupancy" align="right" /></th>
               <th className="px-4 py-3 font-medium">PBJ</th>
-              <th className="px-4 py-3 font-medium">Overall</th>
-              <th className="px-4 py-3 font-medium">Risk</th>
+              <th className="px-4 py-3"><SortHeader field="overall" label="Overall" /></th>
+              <th className="px-4 py-3"><SortHeader field="risk" label="Risk" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">

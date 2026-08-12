@@ -44,6 +44,18 @@ export function SearchFilters({ cities }: { cities: string[] }) {
         <option value="3">3★ &amp; up</option>
         <option value="2">2★ &amp; up</option>
       </select>
+      <select className={sel} value={params.get("occ") ?? ""} onChange={(e) => setParam("occ", e.target.value)}>
+        <option value="">Any occupancy</option>
+        <option value="u70">Under 70%</option>
+        <option value="u80">Under 80%</option>
+        <option value="u90">Under 90%</option>
+        <option value="gte90">90%+</option>
+      </select>
+      <select className={sel} value={params.get("pbj") ?? ""} onChange={(e) => setParam("pbj", e.target.value)}>
+        <option value="">Any PBJ status</option>
+        <option value="complete">PBJ complete</option>
+        <option value="incomplete">PBJ incomplete</option>
+      </select>
       <label className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
         <input
           type="checkbox"
@@ -53,7 +65,7 @@ export function SearchFilters({ cities }: { cities: string[] }) {
         />
         Has risk flags
       </label>
-      {Array.from(params.keys()).some((k) => ["ownerType", "ownership", "city", "minStar", "hasFlags", "q", "chainId"].includes(k)) && (
+      {Array.from(params.keys()).some((k) => ["ownerType", "ownership", "city", "minStar", "hasFlags", "q", "chainId", "occ", "pbj", "sort", "dir"].includes(k)) && (
         <button
           onClick={() => router.push("/search")}
           className="rounded-lg px-3 py-2 text-sm font-medium text-ink-faint hover:text-brand"

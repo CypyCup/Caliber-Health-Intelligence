@@ -10,7 +10,7 @@ import { computeFacilityRiskFlags, sortFlags } from "../riskFlags";
 import { getCmsChainById } from "./cmsChains";
 import { getChainOwnership } from "../ownershipOverrides";
 import {
-  buildSearchRow, matchesQuery, sortSearchRows,
+  buildSearchRow, matchesQuery, refineSearchRows,
   type ArchiveInfo, type ChainDirectoryRow, type ChainProfile,
   type FacilityProfile, type FacilitySearchRow, type SearchParams, type SeedMeta,
 } from "./shared";
@@ -243,8 +243,7 @@ export async function searchFacilities(params: SearchParams = {}): Promise<Facil
     }
     return true;
   });
-  // Already flag-sorted at index build; re-sort to honor filters' ordering.
-  return sortSearchRows([...rows]).slice(0, 500);
+  return refineSearchRows(rows, params).slice(0, 500);
 }
 
 export async function getCities(): Promise<string[]> {
