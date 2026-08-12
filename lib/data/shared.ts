@@ -70,6 +70,7 @@ export interface FacilitySearchRow {
   staffing_star: number | null;
   total_nurse_hprd: number | null;
   turnover_pct: number | null;
+  occupancy: number | null;
   flagCount: number;
   topSeverity: RiskFlag["severity"] | null;
 }
@@ -213,6 +214,7 @@ export function buildSearchRow(
     staffing_star: metrics["staffing_star"]?.latest_value ?? null,
     total_nurse_hprd: metrics["total_nurse_hprd"]?.latest_value ?? null,
     turnover_pct: metrics["total_nurse_turnover_pct"]?.latest_value ?? null,
+    occupancy: metrics["occupancy_rate"]?.latest_value ?? null,
     flagCount: flags.length,
     topSeverity: flags[0]?.severity ?? null,
   };

@@ -61,6 +61,8 @@ export default async function SearchPage({
               <th className="px-4 py-3 font-medium">Owner</th>
               <th className="px-4 py-3 font-medium text-right">Total HPRD</th>
               <th className="px-4 py-3 font-medium text-right">Turnover</th>
+              <th className="px-4 py-3 font-medium text-right">Occupancy</th>
+              <th className="px-4 py-3 font-medium">PBJ</th>
               <th className="px-4 py-3 font-medium">Overall</th>
               <th className="px-4 py-3 font-medium">Risk</th>
             </tr>
@@ -88,6 +90,14 @@ export default async function SearchPage({
                 </td>
                 <td className="px-4 py-3 text-right stat-num">{r.total_nurse_hprd?.toFixed(2) ?? "—"}</td>
                 <td className="px-4 py-3 text-right stat-num">{r.turnover_pct != null ? `${r.turnover_pct.toFixed(0)}%` : "—"}</td>
+                <td className="px-4 py-3 text-right stat-num">{r.occupancy != null ? `${r.occupancy.toFixed(0)}%` : "—"}</td>
+                <td className="px-4 py-3">
+                  {r.facility.pbj_incomplete ? (
+                    <span className="pill bg-amber-50 text-amber-800 border border-amber-200" title="Incomplete PBJ data (CMS footnote 26/27)">Incomplete</span>
+                  ) : (
+                    <span className="pill bg-green-50 text-green-700 border border-green-200">Complete</span>
+                  )}
+                </td>
                 <td className="px-4 py-3"><StarRating value={r.overall_star} size={13} /></td>
                 <td className="px-4 py-3">
                   {r.flagCount === 0 ? (
@@ -103,7 +113,7 @@ export default async function SearchPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-ink-faint">
+                <td colSpan={8} className="px-4 py-10 text-center text-ink-faint">
                   No facilities match these filters.
                 </td>
               </tr>
