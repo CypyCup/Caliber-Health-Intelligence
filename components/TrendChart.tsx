@@ -8,6 +8,15 @@ const TONE_STROKE = {
   flat: "#64748b",
 } as const;
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Compact axis label: "2026-07" -> "Jul '26"; "2026Q2" -> "2026 Q2". */
+function formatPeriod(period: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(period);
+  if (m) return `${MONTHS[parseInt(m[2], 10) - 1]} '${m[1].slice(2)}`;
+  return period.replace("Q", " Q");
+}
+
 /** A labeled line chart for a single metric's full history. Inline SVG. */
 export function TrendChart({ metric, height = 150 }: { metric: ResolvedMetric; height?: number }) {
   const history = metric.history.filter((h) => h.value != null) as {
@@ -55,8 +64,14 @@ export function TrendChart({ metric, height = 150 }: { metric: ResolvedMetric; h
         <g key={h.period}>
           <circle cx={x(i)} cy={y(h.value)} r="2.4" fill={stroke} />
           {(i === 0 || i === history.length - 1 || i % 2 === 0) && (
-            <text x={x(i)} y={height - 8} textAnchor="middle" fontSize="8.5" fill="#94a3b8">
-              {h.period.replace("Q", " Q")}
+            <text
+              x={x(i)}
+              y={height - 8}
+              textAnchor={i === 0 ? "start" : i === history.length - 1 ? "end" : "middle"}
+              fontSize="8.5"
+              fill="#94a3b8"
+            >
+              {formatPeriod(h.period)}
             </text>
           )}
         </g>
