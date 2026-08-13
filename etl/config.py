@@ -34,5 +34,23 @@ DATASETS = {
 # actual file URLs are resolved from the dataset's data.json; see fetch_pbj.py.
 PBJ_DATASET_PAGE = "https://data.cms.gov/quality-of-care/payroll-based-journal-daily-nurse-staffing"
 
+# Datasets fetched as a single current CSV into etl/raw/<folder>/, then processed
+# by the file-based ingesters (ingest_provider_info.py / ingest_chain_performance.py).
+# This unifies the API path with manual uploads — both land CSVs in etl/raw/.
+#   * "provider-data" datasets resolve their CSV downloadURL from the metastore.
+#   * datasets on other CMS catalogs (e.g. Chain Performance on quality-of-care)
+#     have no public query API in the same form; pass their CSV URL via --url.
+CSV_DATASETS = {
+    "provider_info": {
+        "title": "Provider Information", "folder": "provider_info", "source": "provider-data",
+        "landing": "https://data.cms.gov/provider-data/dataset/4pq5-n9py",
+    },
+    "chain_performance": {
+        "title": "Nursing Home Chain Performance Measures", "folder": "chain_performance",
+        "source": "quality-of-care",
+        "landing": "https://data.cms.gov/quality-of-care/nursing-home-chain-performance-measures",
+    },
+}
+
 RAW_DIR = "etl/raw"
 OUT_DIR = "data/seed/texas"

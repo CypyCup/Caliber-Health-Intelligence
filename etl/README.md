@@ -8,13 +8,32 @@ network needed — you supply the CMS CSVs) power the live site:
 | `ingest_provider_info.py` | `etl/raw/provider_info/YYYY-MM.csv` (Provider Information) | `data/seed/national/` | 14,693 real facilities + facility→chain link |
 | `ingest_chain_performance.py` | `etl/raw/chain_performance/YYYY-MM.csv` (Chain Performance Measures) | `data/seed/chains_cms/` | 635 real chains + chain measures |
 
-Download both from data.cms.gov, name each file `YYYY-MM.csv`, drop them in the
-matching `etl/raw/…` folder, and run:
+Download both from data.cms.gov and drop them in the matching `etl/raw/…` folder
+(CMS's native filenames are fine — the month is parsed from names like
+`NH_ProviderInfo_Jul2026.csv`), then run:
 
 ```bash
 python3 etl/ingest_provider_info.py       # facilities (+ point-in-time archive)
 python3 etl/ingest_chain_performance.py   # chains (+ point-in-time archive)
 ```
+
+### Or fetch straight from the CMS API (no manual download)
+
+`fetch_datasets.py` resolves a dataset's current CSV and runs the matching
+ingester in one step. CMS public data needs **no API key**.
+
+```bash
+# Provider Information — fully automatic (Provider Data Catalog metastore)
+python3 etl/fetch_datasets.py provider_info
+
+# Chain Performance Measures lives on a different CMS catalog with no query API,
+# so pass its "Download CSV" link + the data month:
+python3 etl/fetch_datasets.py chain_performance --url "<csv-url>" --period 2026-06
+```
+
+Both the API fetch and a manual upload land a CSV in `etl/raw/…` and flow through
+the same ingesters, so the two paths are interchangeable. Requires `data.cms.gov`
+to be reachable from where it runs.
 
 The two datasets link by **CMS Chain ID** (verified crosswalk). Add a second
 monthly vintage of either file to light up month-over-month trends and the
