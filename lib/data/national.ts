@@ -244,6 +244,16 @@ export interface ChainTrends {
   staffing?: ResolvedMetric;
   turnover?: ResolvedMetric;
   occupancy?: ResolvedMetric;
+  belowBenchmark?: ResolvedMetric;
+  incompletePbj?: ResolvedMetric;
+}
+
+function countDef(key: string, label: string): (typeof METRIC_DEFINITIONS)[number] {
+  return {
+    key, label, unit: "facilities", category: "regulatory", source: "provider",
+    cadence: "Monthly", higher_is_better: false, precision: 0,
+    description: "", methodology_note: "CHI-computed from the member-facility list.",
+  };
 }
 
 export async function getChainRollupHistory(chainId: string): Promise<ChainRollupPoint[]> {
@@ -279,15 +289,13 @@ export async function getChainRollupHistory(chainId: string): Promise<ChainRollu
 /** Chain roll-up trends as ResolvedMetrics ready for the trend charts. */
 export async function getChainRollupTrends(chainId: string): Promise<ChainTrends> {
   const hist = await getChainRollupHistory(chainId);
-  const asMetric = (key: string, pick: (p: ChainRollupPoint) => number | null): ResolvedMetric | undefined => {
-    const def = METRIC_BY_KEY[key];
+  const asMetric = (def: (typeof METRIC_DEFINITIONS)[number] | undefined, pick: (p: ChainRollupPoint) => number | null): ResolvedMetric | undefined => {
     if (!def) return undefined;
     const hs = hist.map((pt) => ({ period: pt.period, value: pick(pt) })).filter((x) => x.value != null) as { period: string; value: number }[];
     if (hs.length === 0) return undefined;
     const latest = hs[hs.length - 1];
     const prev = hs[hs.length - 2];
-    const yoyLabel = yearAgo(latest.period);
-    const yoy = hs.find((x) => x.period === yoyLabel);
+    const yoy = hs.find((x) => x.period === yearAgo(latest.period));
     return {
       definition: def, latest_value: latest.value, latest_period: latest.period,
       vintage_date: `${latest.period}-01`,
@@ -298,9 +306,11 @@ export async function getChainRollupTrends(chainId: string): Promise<ChainTrends
   };
   return {
     history: hist,
-    staffing: asMetric("total_nurse_hprd", (p) => p.avg_total_nurse_hprd),
-    turnover: asMetric("total_nurse_turnover_pct", (p) => p.avg_turnover_pct),
-    occupancy: asMetric("occupancy_rate", (p) => p.avg_occupancy_pct),
+    staffing: asMetric(METRIC_BY_KEY["total_nurse_hprd"], (p) => p.avg_total_nurse_hprd),
+    turnover: asMetric(METRIC_BY_KEY["total_nurse_turnover_pct"], (p) => p.avg_turnover_pct),
+    occupancy: asMetric(METRIC_BY_KEY["occupancy_rate"], (p) => p.avg_occupancy_pct),
+    belowBenchmark: asMetric(countDef("below_benchmark", "Facilities below staffing benchmark"), (p) => p.below_benchmark),
+    incompletePbj: asMetric(countDef("incomplete_pbj", "Facilities with incomplete PBJ"), (p) => p.incomplete_pbj),
   };
 }
 

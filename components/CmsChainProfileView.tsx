@@ -48,7 +48,10 @@ export function CmsChainProfileView({
   const prev = hist[hist.length - 2];
   const occMoM = last?.avg_occupancy_pct != null && prev?.avg_occupancy_pct != null ? last.avg_occupancy_pct - prev.avg_occupancy_pct : null;
   const pbjMoM = last && prev ? last.incomplete_pbj - prev.incomplete_pbj : null;
-  const chainTrendCharts = [trends?.staffing, trends?.turnover, trends?.occupancy].filter(Boolean);
+  const chainTrendCharts = [
+    trends?.staffing, trends?.turnover, trends?.occupancy,
+    trends?.belowBenchmark, trends?.incompletePbj,
+  ].filter(Boolean);
   const hasChainTrend = chainTrendCharts.some((m) => (m?.history.length ?? 0) >= 2);
 
   const total = metrics["total_nurse_hprd"];
