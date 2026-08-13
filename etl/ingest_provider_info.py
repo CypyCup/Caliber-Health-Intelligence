@@ -122,6 +122,10 @@ def main() -> None:
                 residents = num(row[12])
                 if beds and beds > 0 and residents is not None:
                     vals["occupancy_rate"] = round(min(100 * residents / beds, 100), 1)
+                # Per-period PBJ completeness (1 = incomplete) so it can be
+                # tracked over time and rolled up per chain.
+                if pbj_incomplete:
+                    vals["pbj_incomplete"] = 1
                 values_by_period[period][ccn] = vals
         archive_capture("provider_info", archive_rows, key_fields=("ccn",))
         print(f"  ingested {period}: {len(values_by_period[period])} facilities")

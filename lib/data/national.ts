@@ -7,6 +7,7 @@ import path from "path";
 import type { Chain, Facility, MetricSnapshot, OwnerEntity, ResolvedMetric, RiskFlag } from "../types";
 import { METRIC_DEFINITIONS, METRIC_BY_KEY } from "../metrics";
 import { computeFacilityRiskFlags, sortFlags } from "../riskFlags";
+import { BENCHMARKS } from "../benchmarks";
 import { getCmsChainById } from "./cmsChains";
 import { getChainOwnership } from "../ownershipOverrides";
 import {
@@ -223,6 +224,84 @@ export async function getAllChainFacilityRollups(): Promise<Record<string, Chain
   _rollups = {};
   for (const [id, members] of Object.entries(groups)) _rollups[id] = rollupFrom(members);
   return _rollups;
+}
+
+// --- Chain-level trends, computed from the facility history ----------------
+// CMS's chain file is a single snapshot; by rolling the facility history up to
+// the chain each period, CHI produces a chain time-series CMS doesn't publish.
+export interface ChainRollupPoint {
+  period: string;
+  facility_count: number;
+  avg_total_nurse_hprd: number | null; // census-weighted
+  avg_turnover_pct: number | null; // census-weighted
+  avg_occupancy_pct: number | null; // census-weighted
+  below_benchmark: number;
+  incomplete_pbj: number;
+}
+
+export interface ChainTrends {
+  history: ChainRollupPoint[];
+  staffing?: ResolvedMetric;
+  turnover?: ResolvedMetric;
+  occupancy?: ResolvedMetric;
+}
+
+export async function getChainRollupHistory(chainId: string): Promise<ChainRollupPoint[]> {
+  const members = facilities().filter((f) => f.chain_id === chainId);
+  const h = history().periods;
+  const out: ChainRollupPoint[] = [];
+  for (const p of periods()) {
+    let wH = 0, wHd = 0, wT = 0, wTd = 0, wO = 0, wOd = 0, below = 0, incomplete = 0, count = 0;
+    for (const f of members) {
+      const v = h[p]?.[f.ccn];
+      if (!v) continue;
+      count += 1;
+      const w = f.avg_residents_per_day || 1;
+      if (v.total_nurse_hprd != null) {
+        wH += v.total_nurse_hprd * w; wHd += w;
+        if (v.total_nurse_hprd < BENCHMARKS.cms_min_total_nurse_hprd) below += 1;
+      }
+      if (v.total_nurse_turnover_pct != null) { wT += v.total_nurse_turnover_pct * w; wTd += w; }
+      if (v.occupancy_rate != null) { wO += v.occupancy_rate * w; wOd += w; }
+      if (v.pbj_incomplete === 1) incomplete += 1;
+    }
+    out.push({
+      period: p, facility_count: count,
+      avg_total_nurse_hprd: wHd ? round(wH / wHd, 2) : null,
+      avg_turnover_pct: wTd ? round(wT / wTd, 1) : null,
+      avg_occupancy_pct: wOd ? round(wO / wOd, 1) : null,
+      below_benchmark: below, incomplete_pbj: incomplete,
+    });
+  }
+  return out;
+}
+
+/** Chain roll-up trends as ResolvedMetrics ready for the trend charts. */
+export async function getChainRollupTrends(chainId: string): Promise<ChainTrends> {
+  const hist = await getChainRollupHistory(chainId);
+  const asMetric = (key: string, pick: (p: ChainRollupPoint) => number | null): ResolvedMetric | undefined => {
+    const def = METRIC_BY_KEY[key];
+    if (!def) return undefined;
+    const hs = hist.map((pt) => ({ period: pt.period, value: pick(pt) })).filter((x) => x.value != null) as { period: string; value: number }[];
+    if (hs.length === 0) return undefined;
+    const latest = hs[hs.length - 1];
+    const prev = hs[hs.length - 2];
+    const yoyLabel = yearAgo(latest.period);
+    const yoy = hs.find((x) => x.period === yoyLabel);
+    return {
+      definition: def, latest_value: latest.value, latest_period: latest.period,
+      vintage_date: `${latest.period}-01`,
+      qoq_delta: prev ? round(latest.value - prev.value, def.precision + 1) : null,
+      yoy_delta: yoy ? round(latest.value - yoy.value, def.precision + 1) : null,
+      history: hs,
+    };
+  };
+  return {
+    history: hist,
+    staffing: asMetric("total_nurse_hprd", (p) => p.avg_total_nurse_hprd),
+    turnover: asMetric("total_nurse_turnover_pct", (p) => p.avg_turnover_pct),
+    occupancy: asMetric("occupancy_rate", (p) => p.avg_occupancy_pct),
+  };
 }
 
 export async function searchFacilities(params: SearchParams = {}): Promise<FacilitySearchRow[]> {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { CmsChainProfile, ResolvedChainMetric } from "@/lib/data/cmsChains";
-import type { ChainFacilityRollup } from "@/lib/data";
+import type { ChainFacilityRollup, ChainTrends } from "@/lib/data";
 import type { ChainOwnership } from "@/lib/ownershipOverrides";
 import { CHAIN_METRICS_BY_CATEGORY } from "@/lib/cmsChainMetrics";
 import { CATEGORY_LABELS } from "@/lib/metrics";
@@ -9,6 +9,7 @@ import { StarRating } from "@/components/StarRating";
 import { RiskFlagList, FlagSummary } from "@/components/RiskFlags";
 import { ConfidenceBadge } from "@/components/Confidence";
 import { VintageChip } from "@/components/VintageChip";
+import { TrendChart } from "@/components/TrendChart";
 import type { Facility, MetricCategory, RiskFlag } from "@/lib/types";
 
 export interface MemberFacility {
@@ -28,16 +29,27 @@ export function CmsChainProfileView({
   profile,
   members = [],
   rollup,
+  trends,
   ownership,
 }: {
   profile: CmsChainProfile;
   members?: MemberFacility[];
   rollup?: ChainFacilityRollup;
+  trends?: ChainTrends;
   ownership?: ChainOwnership;
 }) {
   const { chain, metrics, flags, national, latestPeriod } = profile;
   const vint = `${latestPeriod}-01`;
   const sortedMembers = [...members].sort((a, b) => b.flags.length - a.flags.length);
+
+  // Month-over-month deltas on the facility-derived roll-up, from its history.
+  const hist = trends?.history ?? [];
+  const last = hist[hist.length - 1];
+  const prev = hist[hist.length - 2];
+  const occMoM = last?.avg_occupancy_pct != null && prev?.avg_occupancy_pct != null ? last.avg_occupancy_pct - prev.avg_occupancy_pct : null;
+  const pbjMoM = last && prev ? last.incomplete_pbj - prev.incomplete_pbj : null;
+  const chainTrendCharts = [trends?.staffing, trends?.turnover, trends?.occupancy].filter(Boolean);
+  const hasChainTrend = chainTrendCharts.some((m) => (m?.history.length ?? 0) >= 2);
 
   const total = metrics["total_nurse_hprd"];
   const turn = metrics["total_nurse_turnover_pct"];
@@ -108,15 +120,38 @@ export function CmsChainProfileView({
             {" "}{rollup.facility_count} member facilities.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <StatTile label="Average occupancy" value={rollup.avg_occupancy_pct != null ? `${rollup.avg_occupancy_pct.toFixed(1)}%` : "—"} sub="census ÷ certified beds (bed-weighted)" />
+            <StatTile
+              label="Average occupancy"
+              value={rollup.avg_occupancy_pct != null ? `${rollup.avg_occupancy_pct.toFixed(1)}%` : "—"}
+              sub={occMoM != null ? `${occMoM >= 0 ? "▲ +" : "▼ "}${occMoM.toFixed(1)} pts MoM · bed-weighted` : "census ÷ certified beds (bed-weighted)"}
+            />
             <StatTile
               label="Facilities with incomplete PBJ data"
               value={`${rollup.facilities_missing_pbj} of ${rollup.facility_count}`}
-              sub={`${rollup.missing_pbj_pct}% — staffing/turnover not computable (fn 26/27)`}
+              sub={pbjMoM != null ? `${pbjMoM >= 0 ? "▲ +" : "▼ "}${pbjMoM} MoM · ${rollup.missing_pbj_pct}% (fn 26/27)` : `${rollup.missing_pbj_pct}% — not computable (fn 26/27)`}
               tone={rollup.missing_pbj_pct >= 25 ? "warn" : "default"}
             />
             <StatTile label="Certified beds (portfolio)" value={rollup.total_beds.toLocaleString()} />
           </div>
+
+          {hasChainTrend && (
+            <div className="mt-5">
+              <p className="text-sm font-medium text-ink-soft">Chain trend — census-weighted, from the facility history</p>
+              <div className="mt-3 grid gap-4 lg:grid-cols-3">
+                {chainTrendCharts.map((m) =>
+                  m && m.history.length >= 2 ? (
+                    <div key={m.definition.key} className="rounded-lg border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium text-ink">{m.definition.label}</p>
+                        <span className="text-[11px] text-ink-faint">{m.definition.unit}</span>
+                      </div>
+                      <div className="mt-1"><TrendChart metric={m} height={120} /></div>
+                    </div>
+                  ) : null,
+                )}
+              </div>
+            </div>
+          )}
         </section>
       )}
 

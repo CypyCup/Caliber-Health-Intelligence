@@ -32,7 +32,9 @@ const impl = process.env.CHI_DATA_SOURCE === "supabase" ? supabase : national;
 export const getFacilitiesByChain = national.getFacilitiesByChain;
 export const getChainFacilityRollup = national.getChainFacilityRollup;
 export const getAllChainFacilityRollups = national.getAllChainFacilityRollups;
-export type { ChainFacilityRollup } from "./national";
+export const getChainRollupHistory = national.getChainRollupHistory;
+export const getChainRollupTrends = national.getChainRollupTrends;
+export type { ChainFacilityRollup, ChainRollupPoint, ChainTrends } from "./national";
 
 export const getSeedMeta = impl.getSeedMeta;
 export const getAllFacilities = impl.getAllFacilities;
