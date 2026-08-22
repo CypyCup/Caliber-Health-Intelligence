@@ -10,7 +10,7 @@ import { FlagSummary } from "@/components/RiskFlags";
 import { ConfidenceBadge } from "@/components/Confidence";
 import { BENCHMARKS } from "@/lib/benchmarks";
 import { getCmsChainById, getCmsChainProfile } from "@/lib/data/cmsChains";
-import { getFacilitiesByChain, getChainFacilityRollup, getChainRollupTrends } from "@/lib/data";
+import { getFacilitiesByChain, getChainFacilityRollup, getChainRollupTrends, getChainChowRecent } from "@/lib/data";
 import { getChainOwnership } from "@/lib/ownershipOverrides";
 import { CmsChainProfileView } from "@/components/CmsChainProfileView";
 
@@ -33,12 +33,13 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
     }
     const cmsProfile = getCmsChainProfile(params.id);
     if (!cmsProfile) notFound();
-    const [members, rollup, trends] = await Promise.all([
+    const [members, rollup, trends, chowRecent] = await Promise.all([
       getFacilitiesByChain(params.id),
       getChainFacilityRollup(params.id),
       getChainRollupTrends(params.id),
+      getChainChowRecent(params.id, 2023),
     ]);
-    return <CmsChainProfileView profile={cmsProfile} members={members} rollup={rollup} trends={trends} ownership={getChainOwnership(params.id)} />;
+    return <CmsChainProfileView profile={cmsProfile} members={members} rollup={rollup} trends={trends} chowRecent={chowRecent} ownership={getChainOwnership(params.id)} />;
   }
 
   const chain = await getChain(params.id);

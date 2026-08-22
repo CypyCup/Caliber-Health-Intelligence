@@ -42,6 +42,57 @@ let _sortedPeriods: string[] | null = null;
 function facilities(): Facility[] {
   return (_facilities ??= load<Facility[]>("facilities.json"));
 }
+
+// --- Change of Ownership (CMS CHOW, public enrollment data) -----------------
+export interface ChowTx {
+  date: string;
+  buyer: string;
+  seller: string;
+  type: string;
+  year: string;
+}
+export interface ChowSummary {
+  total: number;
+  distinct_facilities: number;
+  latest_date: string;
+  by_year: Record<string, number>;
+  recent: (ChowTx & { ccn: string })[];
+}
+
+let _chow: Record<string, ChowTx[]> | null = null;
+let _chowMeta: ChowSummary | null = null;
+function chow(): Record<string, ChowTx[]> {
+  if (_chow === null) {
+    try { _chow = load<Record<string, ChowTx[]>>("chow.json"); }
+    catch { _chow = {}; }
+  }
+  return _chow;
+}
+
+export async function getFacilityChow(ccn: string): Promise<ChowTx[]> {
+  return chow()[ccn] ?? [];
+}
+
+export async function getChowSummary(): Promise<ChowSummary | null> {
+  if (_chowMeta === null) {
+    try { _chowMeta = load<ChowSummary>("chow_meta.json"); }
+    catch { _chowMeta = null; }
+  }
+  return _chowMeta;
+}
+
+/** Member facilities of a chain with an ownership change since `sinceYear`. */
+export async function getChainChowRecent(chainId: string, sinceYear = 2023): Promise<{ ccn: string; name: string; tx: ChowTx }[]> {
+  const c = chow();
+  const out: { ccn: string; name: string; tx: ChowTx }[] = [];
+  for (const f of facilities()) {
+    if (f.chain_id !== chainId) continue;
+    const txs = c[f.ccn] ?? [];
+    const recent = txs.find((t) => Number(t.year) >= sinceYear);
+    if (recent) out.push({ ccn: f.ccn, name: f.name, tx: recent });
+  }
+  return out.sort((a, b) => (a.tx.date < b.tx.date ? 1 : -1));
+}
 function byCcn(): Record<string, Facility> {
   if (!_byCcn) _byCcn = Object.fromEntries(facilities().map((f) => [f.ccn, f]));
   return _byCcn;

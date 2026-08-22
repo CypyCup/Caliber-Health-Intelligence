@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getFacility, getFacilityProfile } from "@/lib/data";
+import { getFacility, getFacilityProfile, getFacilityChow } from "@/lib/data";
 import { isRegistered } from "@/lib/auth";
 import { RegistrationWall } from "@/components/RegistrationWall";
 import { MetricCard } from "@/components/MetricCard";
@@ -28,7 +28,10 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
     return <RegistrationWall nextLabel={`the full profile for ${facility.name}`} />;
   }
 
-  const profile = await getFacilityProfile(params.ccn);
+  const [profile, chow] = await Promise.all([
+    getFacilityProfile(params.ccn),
+    getFacilityChow(params.ccn),
+  ]);
   if (!profile) notFound();
   const { metrics, flags, owner, chain } = profile;
 
@@ -152,6 +155,37 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Ownership history (CMS Change of Ownership) */}
+      <section className="mt-10">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-semibold text-ink">Ownership history</h2>
+          <span className="text-xs text-ink-faint">CMS Change-of-Ownership records</span>
+        </div>
+        {chow.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-soft">No CMS change-of-ownership record for this facility since 2016.</p>
+        ) : (
+          <ol className="mt-4 space-y-3 border-l border-slate-200 pl-5">
+            {chow.map((tx, i) => (
+              <li key={i} className="relative">
+                <span className="absolute -left-[23px] top-1.5 h-2.5 w-2.5 rounded-full bg-brand" />
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="stat-num text-sm font-semibold text-ink">{tx.date || tx.year}</span>
+                  <span className="pill bg-slate-100 text-ink-faint">{tx.type}</span>
+                </div>
+                <p className="mt-0.5 text-sm text-ink-soft">
+                  <span className="text-ink-faint">{tx.seller || "—"}</span>
+                  <span className="mx-1.5">→</span>
+                  <span className="font-medium text-ink">{tx.buyer || "—"}</span>
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+        {facility.changed_ownership_12mo && chow.length > 0 && (
+          <p className="mt-3 text-xs text-risk-watch">Provider Information also flags an ownership change in the last 12 months.</p>
+        )}
       </section>
 
       {/* Metric scorecards by category */}

@@ -34,7 +34,10 @@ export const getChainFacilityRollup = national.getChainFacilityRollup;
 export const getAllChainFacilityRollups = national.getAllChainFacilityRollups;
 export const getChainRollupHistory = national.getChainRollupHistory;
 export const getChainRollupTrends = national.getChainRollupTrends;
-export type { ChainFacilityRollup, ChainRollupPoint, ChainTrends } from "./national";
+export const getFacilityChow = national.getFacilityChow;
+export const getChowSummary = national.getChowSummary;
+export const getChainChowRecent = national.getChainChowRecent;
+export type { ChainFacilityRollup, ChainRollupPoint, ChainTrends, ChowTx, ChowSummary } from "./national";
 
 export const getSeedMeta = impl.getSeedMeta;
 export const getAllFacilities = impl.getAllFacilities;

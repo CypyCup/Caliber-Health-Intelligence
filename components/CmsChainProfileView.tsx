@@ -30,12 +30,14 @@ export function CmsChainProfileView({
   members = [],
   rollup,
   trends,
+  chowRecent = [],
   ownership,
 }: {
   profile: CmsChainProfile;
   members?: MemberFacility[];
   rollup?: ChainFacilityRollup;
   trends?: ChainTrends;
+  chowRecent?: { ccn: string; name: string; tx: { date: string; buyer: string; seller: string; type: string; year: string } }[];
   ownership?: ChainOwnership;
 }) {
   const { chain, metrics, flags, national, latestPeriod } = profile;
@@ -183,6 +185,43 @@ export function CmsChainProfileView({
           </section>
         );
       })}
+
+      {/* M&A activity — CMS Change of Ownership among member facilities */}
+      {chowRecent.length > 0 && (
+        <section className="mt-10">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-ink">Recent ownership changes</h2>
+            <span className="text-xs text-ink-faint">CMS Change-of-Ownership · member facilities since 2023</span>
+          </div>
+          <p className="mt-1 text-sm text-ink-soft">
+            <span className="font-semibold text-ink">{chowRecent.length}</span> member facilit{chowRecent.length === 1 ? "y" : "ies"} changed ownership since 2023.
+          </p>
+          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-paper-muted text-left text-xs uppercase tracking-wide text-ink-faint">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Effective</th>
+                  <th className="px-4 py-3 font-medium">Facility</th>
+                  <th className="px-4 py-3 font-medium">Transfer</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {chowRecent.slice(0, 15).map((r) => (
+                  <tr key={r.ccn} className="hover:bg-brand-tint/40">
+                    <td className="px-4 py-3 stat-num whitespace-nowrap">{r.tx.date || r.tx.year}</td>
+                    <td className="px-4 py-3">
+                      <Link href={`/facility/${r.ccn}`} className="font-medium text-brand hover:underline">{r.name}</Link>
+                    </td>
+                    <td className="px-4 py-3 text-ink-soft">
+                      <span className="text-ink-faint">{r.tx.seller || "—"}</span> → <span className="text-ink">{r.tx.buyer || "—"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Real member facilities (verified via CMS Chain ID) */}
       {sortedMembers.length > 0 && (

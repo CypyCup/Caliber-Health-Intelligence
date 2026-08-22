@@ -64,6 +64,14 @@ export const SOURCES: Record<string, SourceDef> = {
     typical_lag: "12–18 months (structural / lagged layer)",
     url: "https://www.cms.gov/data-research/statistics-trends-reports/cost-reports/cost-reports-fiscal-year",
   },
+  chow: {
+    key: "chow",
+    name: "Change of Ownership (CHOW, provider enrollment)",
+    publisher: "CMS",
+    cadence: "Periodic",
+    typical_lag: "Effective-date based",
+    url: "https://data.cms.gov/",
+  },
 };
 
 // ---------------------------------------------------------------------------
