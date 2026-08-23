@@ -82,9 +82,15 @@ def main() -> None:
         upsert("metric_snapshots", rows, "ccn,metric_key,period")
         print(f"    (period {period}: {len(rows)} snapshot rows)")
 
-    # 4) Chain metric snapshots.
-    chain_metrics = load_json(os.path.join(CHAINS, "chain_metrics.json"))
-    upsert("chain_metric_snapshots", chain_metrics, "chain_id,metric_key,period")
+    # 4) Chain metric snapshots — expand the compact nested history.
+    ch = load_json(os.path.join(CHAINS, "chain_history.json"))
+    rows = []
+    for chain_id, metrics in ch["values"].items():
+        for metric_key, by_period in metrics.items():
+            for period, value in by_period.items():
+                rows.append({"chain_id": chain_id, "metric_key": metric_key, "period": period,
+                             "value": value, "vintage_date": f"{period}-01", "source": "chain_performance"})
+    upsert("chain_metric_snapshots", rows, "chain_id,metric_key,period")
 
     # 5) National benchmark row -> key/value.
     national = load_json(os.path.join(CHAINS, "national.json"))

@@ -1,13 +1,14 @@
 // Real CMS chain layer — reads the ingested Nursing Home Chain Performance
 // Measures (data/seed/chains_cms). This is REAL, national, chain-level CMS data
 // and is served in both demo and Supabase modes (it is its own dataset).
+import { readFileSync } from "fs";
+import path from "path";
 import type { RiskFlag, RiskSeverity } from "../types";
 import { CHAIN_METRIC_BY_KEY, type ChainMetricDef } from "../cmsChainMetrics";
 import { BENCHMARKS } from "../benchmarks";
 import { sortFlags } from "../riskFlags";
 
 import chainsJson from "@/data/seed/chains_cms/chains.json";
-import metricsJson from "@/data/seed/chains_cms/chain_metrics.json";
 import nationalJson from "@/data/seed/chains_cms/national.json";
 import metaJson from "@/data/seed/chains_cms/meta.json";
 
@@ -24,15 +25,8 @@ export interface CmsChain {
   pct_for_profit: number | null;
   pct_non_profit: number | null;
   pct_government: number | null;
-}
-
-interface ChainMetricRow {
-  chain_id: string;
-  metric_key: string;
-  period: string;
-  value: number;
-  vintage_date: string;
-  source: string;
+  /** Newest snapshot the chain appeared in ("current" chains match meta.latest_period). */
+  last_period?: string;
 }
 
 export interface CmsChainMeta {
@@ -42,6 +36,7 @@ export interface CmsChainMeta {
   periods: string[];
   latest_period: string;
   chains: number;
+  chains_all_time?: number;
   national_facilities: number;
 }
 
@@ -55,13 +50,28 @@ export interface ResolvedChainMetric {
 }
 
 const chains = chainsJson as unknown as CmsChain[];
-const metricRows = metricsJson as unknown as ChainMetricRow[];
 const national = nationalJson as unknown as Record<string, number | null> & { period?: string; vintage_date?: string };
 const meta = metaJson as unknown as CmsChainMeta;
-
-const byChain: Record<string, ChainMetricRow[]> = {};
-for (const r of metricRows) (byChain[r.chain_id] ||= []).push(r);
 const chainById: Record<string, CmsChain> = Object.fromEntries(chains.map((c) => [c.id, c]));
+
+// The 3-year metric history is compact-nested and fs-loaded (too big to bundle):
+// values[chain_id][metric_key][period] = value
+interface ChainHistory {
+  latest_period: string;
+  periods: string[];
+  values: Record<string, Record<string, Record<string, number>>>;
+}
+let _hist: ChainHistory | null = null;
+function hist(): ChainHistory {
+  if (_hist === null) {
+    try {
+      _hist = JSON.parse(readFileSync(path.join(process.cwd(), "data/seed/chains_cms/chain_history.json"), "utf8"));
+    } catch {
+      _hist = { latest_period: "", periods: [], values: {} };
+    }
+  }
+  return _hist!;
+}
 
 export function getCmsChainMeta(): CmsChainMeta {
   return meta;
@@ -76,19 +86,20 @@ export function getCmsChainById(id: string): CmsChain | undefined {
 function resolveChainMetric(chainId: string, key: string): ResolvedChainMetric | undefined {
   const def = CHAIN_METRIC_BY_KEY[key];
   if (!def) return undefined;
-  const series = (byChain[chainId] ?? [])
-    .filter((r) => r.metric_key === key)
-    .sort((a, b) => (a.period < b.period ? -1 : a.period > b.period ? 1 : 0));
-  if (series.length === 0) return undefined;
+  const pv = hist().values[chainId]?.[key];
+  if (!pv) return undefined;
+  const periods = Object.keys(pv).sort();
+  if (periods.length === 0) return undefined;
+  const series = periods.map((p) => ({ period: p, value: pv[p] }));
   const latest = series[series.length - 1];
   const prev = series[series.length - 2];
   return {
     def,
     latest_value: latest.value,
     latest_period: latest.period,
-    vintage_date: latest.vintage_date,
+    vintage_date: `${latest.period}-01`,
     prev_delta: prev ? round(latest.value - prev.value, def.precision + 1) : null,
-    history: series.map((s) => ({ period: s.period, value: s.value })),
+    history: series,
   };
 }
 
@@ -177,7 +188,9 @@ export interface CmsChainDirectoryRow {
 const SEV_RANK: Record<RiskSeverity, number> = { critical: 5, high: 4, elevated: 3, watch: 2, info: 1 };
 
 export function getCmsChainsDirectory(): CmsChainDirectoryRow[] {
-  const rows = chains.map((chain) => {
+  // Only chains present in the latest snapshot (others entered/exited the file).
+  const current = chains.filter((c) => c.last_period === meta.latest_period);
+  const rows = current.map((chain) => {
     const m = resolveAllChainMetrics(chain.id);
     const flags = computeChainFlags(chain, m);
     return {

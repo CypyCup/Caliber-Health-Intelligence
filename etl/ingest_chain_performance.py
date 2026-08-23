@@ -5,17 +5,22 @@ Measures" dataset into the Atlas's real chain layer.
 
 Source: https://data.cms.gov/quality-of-care/nursing-home-chain-performance-measures
 
-This is REAL, national, chain-level CMS data (~635 operating chains) — CMS's own
-chain grouping with performance already aggregated. It powers the real Operators
-& chains directory and real chain profiles. (It is chain-level only; it carries
-no facility→chain CCN mapping, so facility-level drill-down still comes from the
-Provider Information ETL.)
+Real, national, chain-level CMS data. Columns are matched BY NAME (not position),
+so it handles both single monthly CMS files and the combined multi-snapshot
+archive, and it survives CMS's schema shifts (the Affiliated Entity -> Chain
+rename, the RN-hours typo fix, appended legacy columns).
 
-Drop one CSV per monthly vintage in etl/raw/chain_performance/ named YYYY-MM.csv.
-Multiple vintages produce month-over-month history + the point-in-time archive
-diff (Business Plan §3). Run:
-
+Drop CMS chain files (single monthly, or a combined archive with a
+`snapshot_release` column) in etl/raw/chain_performance/ and run:
     python3 etl/ingest_chain_performance.py
+
+Handling per the CMS archive notes:
+  * The `National` row is the all-facility benchmark, not a chain — pulled out
+    and stored per period (national_history) with the latest as the baseline.
+  * Values are text with suppression markers / blanks — cast to numeric, blanks
+    -> null.
+  * Three quality measures were redefined in Jan 2025; we map pressure-ulcer to
+    the current all-resident column and do not stitch it across the boundary.
 """
 from __future__ import annotations
 
@@ -23,104 +28,167 @@ import csv
 import glob
 import json
 import os
+from collections import defaultdict
 
 from common import archive_capture, period_from_filename
 
 RAW_DIR = os.path.join("etl", "raw", "chain_performance")
 OUT_DIR = os.path.join("data", "seed", "chains_cms")
 
-# Chain descriptor columns (0-based index -> field name).
-DESCRIPTOR_COLS = {
-    2: "num_facilities", 3: "num_states", 4: "sff", 5: "sff_candidates",
-    6: "abuse_count", 7: "abuse_pct", 8: "pct_for_profit",
-    9: "pct_non_profit", 10: "pct_government",
+# Descriptor fields -> exact CMS column name.
+DESCRIPTORS = {
+    "num_facilities": "Number of facilities",
+    "num_states": "Number of states and territories with operations",
+    "sff": "Number of Special Focus Facilities (SFF)",
+    "sff_candidates": "Number of SFF candidates",
+    "abuse_count": "Number of facilities with an abuse icon",
+    "abuse_pct": "Percentage of facilities with an abuse icon",
+    "pct_for_profit": "Percent of facilities classified as for-profit",
+    "pct_non_profit": "Percent of facilities classified as non-profit",
+    "pct_government": "Percent of facilities classified as government-owned",
 }
 
-# Performance metric columns (index -> metric_key). Keys reuse the facility-level
-# metric keys where the meaning aligns (chain averages), plus chain-only keys.
-METRIC_COLS = {
-    11: "overall_star", 12: "health_inspection_star", 13: "staffing_star", 14: "qm_star",
-    15: "total_nurse_hprd", 16: "weekend_nurse_hprd", 17: "rn_hprd",
-    18: "total_nurse_turnover_pct", 19: "rn_turnover_pct", 20: "admin_departures",
-    21: "fines_count", 23: "fines_total_usd", 24: "fines_avg_usd",
-    25: "payment_denials_total",
-    27: "rehosp_pct", 28: "ed_visit_pct",
-    36: "ls_antipsychotic_pct", 37: "ls_falls_major_pct", 38: "ls_pressure_ulcer_pct",
-    39: "ls_uti_pct", 50: "preventable_readmit_pct",
+# Metric keys -> exact CMS column name.
+METRICS = {
+    "overall_star": "Average overall 5-star rating",
+    "health_inspection_star": "Average health inspection rating",
+    "staffing_star": "Average staffing rating",
+    "qm_star": "Average quality rating",
+    "total_nurse_hprd": "Average total nurse hours per resident day",
+    "weekend_nurse_hprd": "Average total weekend nurse hours per resident day",
+    "rn_hprd": "Average total Registered Nurse hours per resident day",
+    "total_nurse_turnover_pct": "Average total nursing staff turnover percentage",
+    "rn_turnover_pct": "Average Registered Nurse turnover percentage",
+    "admin_departures": "Average number of administrators who have left the nursing home",
+    "fines_count": "Total number of fines",
+    "fines_total_usd": "Total amount of fines in dollars",
+    "fines_avg_usd": "Average amount of fines in dollars",
+    "payment_denials_total": "Total number of payment denials",
+    "rehosp_pct": "Average percentage of short-stay residents who were re-hospitalized after a nursing home admission",
+    "ed_visit_pct": "Average percentage of short-stay residents who have had an outpatient emergency department visit",
+    "ls_antipsychotic_pct": "Average percentage of long-stay residents who received an antipsychotic medication",
+    "ls_falls_major_pct": "Average percentage of long-stay residents experiencing one or more falls with major injury",
+    "ls_pressure_ulcer_pct": "Average percentage of long-stay residents with pressure ulcers",
+    "ls_uti_pct": "Average percentage of long-stay residents with a urinary tract infection",
+    "preventable_readmit_pct": "Average rate of potentially preventable hospital readmissions 30 days after discharge from a SNF",
 }
 
 
-def clean(v: str):
-    v = (v or "").strip()
-    if v in ("", "N/A", "NA", "-"):
+def clean(v):
+    v = (v or "").strip().replace("$", "").replace(",", "").replace("%", "")
+    if v in ("", "N/A", "NA", "-", "*", ".", "Not Available"):
         return None
-    v = v.replace("$", "").replace(",", "").replace("%", "").strip()
     try:
         return float(v)
     except ValueError:
         return None
 
 
+def norm_header(h: str) -> str:
+    return " ".join(h.strip().split()).lower()
+
+
 def main() -> None:
     files = sorted(glob.glob(os.path.join(RAW_DIR, "*.csv")))
     if not files:
-        raise SystemExit(f"No CSVs in {RAW_DIR}/ (drop the Chain Performance CSVs there).")
+        raise SystemExit(f"No CSVs in {RAW_DIR}/ (drop the Chain Performance file[s] there).")
 
-    chains: dict[str, dict] = {}
-    metrics: list[dict] = []
-    national: dict = {}
-    periods: list[str] = []
+    # Accumulators
+    chains: dict[str, dict] = {}          # chain_id -> descriptor (from newest period)
+    chain_desc_period: dict[str, str] = {}  # chain_id -> period the descriptor came from
+    # Compact nested history: chain_id -> metric_key -> period -> value
+    history: dict[str, dict[str, dict[str, float]]] = defaultdict(lambda: defaultdict(dict))
+    national_hist: dict[str, dict] = {}   # period -> {metric: value}
+    all_periods: set[str] = set()
 
-    # Oldest -> newest so the newest file wins for descriptor fields.
-    for path in sorted(files, key=period_from_filename):
-        period = period_from_filename(path)
-        periods.append(period)
-        vintage = f"{period}-01"
+    for path in files:
         with open(path, encoding="utf-8-sig") as f:
-            rows = list(csv.reader(f))
-        raw_rows_for_archive = []
-        for row in rows[1:]:
-            if len(row) < 51:
-                continue
-            name = row[0].strip()
-            cid = row[1].strip()
-            raw_rows_for_archive.append({"chain_id": cid or "national", **{str(i): row[i] for i in range(len(row))}})
-            if name == "National":
-                # Store the National benchmark row (latest period wins).
-                national = {"period": period, "vintage_date": vintage,
-                            **{k: clean(row[i]) for i, k in {**DESCRIPTOR_COLS, **METRIC_COLS}.items()}}
-                continue
-            if not cid:
-                continue
-            chain_id = f"cms-{cid}"
-            # Descriptor from the latest period seen (files processed in order).
-            chains[chain_id] = {
-                "id": chain_id, "cms_chain_id": cid, "name": name,
-                **{field: clean(row[idx]) for idx, field in DESCRIPTOR_COLS.items()},
-            }
-            for idx, key in METRIC_COLS.items():
-                val = clean(row[idx])
-                if val is not None:
-                    metrics.append({"chain_id": chain_id, "metric_key": key, "period": period,
-                                    "value": val, "vintage_date": vintage, "source": "chain_performance"})
-        archive_capture("chain_performance", raw_rows_for_archive, key_fields=("chain_id",))
-        print(f"  ingested {period}: {sum(1 for m in metrics if m['period']==period)} chain-metric rows")
+            reader = csv.reader(f)
+            header = next(reader)
+            col = {norm_header(h): i for i, h in enumerate(header)}
+            has_snap = "snapshot_release" in col
+            file_period = period_from_filename(path)
+
+            def idx(name):
+                return col.get(norm_header(name))
+
+            i_chain = idx("Chain") if idx("Chain") is not None else idx("Affiliated entity")
+            i_cid = idx("Chain ID") if idx("Chain ID") is not None else idx("Affiliated entity ID")
+            i_snap = col.get("snapshot_release")
+            desc_idx = {k: idx(v) for k, v in DESCRIPTORS.items()}
+            met_idx = {k: idx(v) for k, v in METRICS.items()}
+
+            archive_rows = []
+            for row in reader:
+                if not row or i_chain is None or i_chain >= len(row):
+                    continue
+                period = (row[i_snap][:7] if has_snap and row[i_snap] else file_period)
+                all_periods.add(period)
+                vintage = f"{period}-01"
+                name = (row[i_chain] or "").strip()
+                cid = (row[i_cid] or "").strip() if i_cid is not None else ""
+
+                if name == "National" or not cid:
+                    if name == "National":
+                        nh = national_hist.setdefault(period, {"period": period, "vintage_date": vintage})
+                        for k, ix in {**desc_idx, **met_idx}.items():
+                            val = clean(row[ix]) if ix is not None and ix < len(row) else None
+                            if val is not None:
+                                nh[k] = val
+                    continue
+
+                chain_id = f"cms-{cid}"
+                archive_rows.append({"chain_id": chain_id, "period": period})
+                # descriptor: keep the newest period's values
+                if chain_desc_period.get(chain_id, "") <= period:
+                    chain_desc_period[chain_id] = period
+                    chains[chain_id] = {"id": chain_id, "cms_chain_id": cid, "name": name,
+                                        **{k: clean(row[ix]) if ix is not None and ix < len(row) else None
+                                           for k, ix in desc_idx.items()}}
+                for k, ix in met_idx.items():
+                    val = clean(row[ix]) if ix is not None and ix < len(row) else None
+                    if val is not None:
+                        history[chain_id][k][period] = round(val, 4)
+            archive_capture("chain_performance", archive_rows, key_fields=("chain_id", "period"))
+
+    periods = sorted(all_periods)
+    latest = periods[-1] if periods else ""
+    national_latest = national_hist.get(latest, {})
+
+    # Tag each chain with the newest snapshot it appeared in; "current" chains
+    # are those present in the latest snapshot (others entered/exited the file).
+    for cid, c in chains.items():
+        c["last_period"] = chain_desc_period.get(cid, "")
+    current = sum(1 for c in chains.values() if c["last_period"] == latest)
+
+    # Compact nested history (chain_id -> metric -> period -> value).
+    hist_out = {cid: {mk: dict(pv) for mk, pv in ms.items()} for cid, ms in history.items()}
 
     os.makedirs(OUT_DIR, exist_ok=True)
     _write(os.path.join(OUT_DIR, "chains.json"), list(chains.values()))
-    _write(os.path.join(OUT_DIR, "chain_metrics.json"), metrics)
-    _write(os.path.join(OUT_DIR, "national.json"), national)
+    _write(os.path.join(OUT_DIR, "chain_history.json"), {"latest_period": latest, "periods": periods, "values": hist_out})
+    _write(os.path.join(OUT_DIR, "national.json"), national_latest)
+    _write(os.path.join(OUT_DIR, "national_history.json"), {"periods": {p: national_hist[p] for p in periods if p in national_hist}})
     _write(os.path.join(OUT_DIR, "meta.json"), {
         "dataset": "CMS Nursing Home Chain Performance Measures",
         "source": "https://data.cms.gov/quality-of-care/nursing-home-chain-performance-measures",
         "synthetic": False,
-        "periods": sorted(set(periods)),
-        "latest_period": sorted(set(periods))[-1],
-        "chains": len(chains),
-        "national_facilities": int(national.get("num_facilities") or 0),
+        "periods": periods,
+        "latest_period": latest,
+        "chains": current,
+        "chains_all_time": len(chains),
+        "national_facilities": int(national_latest.get("num_facilities") or 0),
     })
-    print(f"Wrote {len(chains)} chains, {len(metrics)} chain-metric rows, "
-          f"periods={sorted(set(periods))} -> {OUT_DIR}")
+    total_pts = sum(len(pv) for ms in history.values() for pv in ms.values())
+    print(f"Wrote {len(chains)} chains ({current} current), {total_pts} metric points, "
+          f"{len(periods)} periods ({periods[0]}..{latest}) -> {OUT_DIR}")
+
+
+# Remove the obsolete flat metrics file if present.
+def _cleanup():
+    old = os.path.join(OUT_DIR, "chain_metrics.json")
+    if os.path.exists(old):
+        os.remove(old)
 
 
 def _write(path: str, obj) -> None:
@@ -130,3 +198,4 @@ def _write(path: str, obj) -> None:
 
 if __name__ == "__main__":
     main()
+    _cleanup()

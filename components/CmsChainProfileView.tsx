@@ -10,6 +10,7 @@ import { RiskFlagList, FlagSummary } from "@/components/RiskFlags";
 import { ConfidenceBadge } from "@/components/Confidence";
 import { VintageChip } from "@/components/VintageChip";
 import { TrendChart } from "@/components/TrendChart";
+import { Sparkline } from "@/components/Sparkline";
 import type { Facility, MetricCategory, RiskFlag } from "@/lib/types";
 
 export interface MemberFacility {
@@ -280,10 +281,16 @@ function ChainMetricCard({ m, nationalValue }: { m: ResolvedChainMetric; nationa
   const delta = m.prev_delta;
   const improving = delta == null || d.higher_is_better == null ? null : d.higher_is_better ? delta > 0 : delta < 0;
   const deltaClass = improving == null ? "text-ink-faint" : improving ? "text-green-600" : "text-red-600";
+  const tone: "good" | "bad" | "neutral" = improving == null ? "neutral" : improving ? "good" : "bad";
   return (
     <div className="card p-4">
-      <p className="text-sm font-medium text-ink-soft">{d.label}</p>
-      <p className="text-[11px] text-ink-faint">{d.unit}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-medium text-ink-soft">{d.label}</p>
+          <p className="text-[11px] text-ink-faint">{d.unit}</p>
+        </div>
+        {m.history.length >= 2 && <Sparkline values={m.history.map((h) => h.value)} tone={tone} />}
+      </div>
       <p className="mt-1 stat-num text-2xl font-semibold text-ink">{fmt(m.latest_value, d.unit, d.precision)}</p>
       <div className="mt-1 flex items-center justify-between text-xs">
         <span className="text-ink-faint">Nat&apos;l {fmt(nationalValue, d.unit, d.precision)}</span>
