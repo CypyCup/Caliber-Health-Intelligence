@@ -79,6 +79,24 @@ create table if not exists chain_metric_snapshots (
 );
 create index if not exists idx_chainsnap_metric on chain_metric_snapshots(metric_key);
 
+-- PBJ staffing (raw numerators/denominators per facility-quarter; derive HPRD/
+-- agency as sum(numerator)/sum(denominator), never averaging facility percentages).
+create table if not exists pbj_facility_quarter (
+  ccn                             text not null references facilities(ccn) on delete cascade,
+  cy_qtr                          text not null,
+  resident_days                   double precision,
+  total_nurse_hours               double precision,
+  total_nurse_contract_hours      double precision,
+  rn_hours                        double precision,
+  lpn_hours                       double precision,
+  aide_hours                      double precision,
+  total_hours_all_staff           double precision,
+  total_contract_hours_all_staff  double precision,
+  reporting_completeness_pct      double precision,
+  primary key (ccn, cy_qtr)
+);
+create index if not exists idx_pbj_qtr on pbj_facility_quarter(cy_qtr);
+
 -- National benchmark row (latest vintage), as key/value.
 create table if not exists chain_national (
   metric_key   text primary key,
@@ -116,6 +134,8 @@ alter table facilities            enable row level security;
 alter table metric_snapshots      enable row level security;
 alter table cms_chains            enable row level security;
 alter table chain_metric_snapshots enable row level security;
+alter table pbj_facility_quarter  enable row level security;
+create policy "read pbj" on pbj_facility_quarter for select using (true);
 alter table chain_national        enable row level security;
 alter table archive_manifest      enable row level security;
 alter table leads                 enable row level security;

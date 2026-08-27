@@ -1,0 +1,302 @@
+{
+ "nurse": [
+  {
+   "quarter": "2017Q1",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2017_Q1_afnb-m6tn.csv"
+  },
+  {
+   "quarter": "2017Q2",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2017_Q2_utrm-5phx.csv"
+  },
+  {
+   "quarter": "2017Q3",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2017_Q3_bpnu-uej3.csv"
+  },
+  {
+   "quarter": "2017Q4",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2017_Q4_4z4g-bf8w.csv"
+  },
+  {
+   "quarter": "2018Q1",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/6bfe920d-b1a9-40b6-830d-6a4d22351efc/PBJ_dailynursestaffing_CY2018Q1.csv"
+  },
+  {
+   "quarter": "2018Q2",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/ce6dfc7f-d813-4139-b8ec-21179429a8a1/PBJ_dailynursestaffing_CY2018Q2.csv"
+  },
+  {
+   "quarter": "2018Q3",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/5ee40dca-6c36-43e6-a8d2-b009078b5f5b/PBJ_dailynursestaffing_CY2018Q3.csv"
+  },
+  {
+   "quarter": "2018Q4",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2018_Q4_kiqr-gzba.csv"
+  },
+  {
+   "quarter": "2019Q1",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2019_Q1_aayb-gfzp.csv"
+  },
+  {
+   "quarter": "2019Q2",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2019_Q2_4juw-fxcf.csv"
+  },
+  {
+   "quarter": "2019Q3",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2019_Q3_rqet-pmzi.csv"
+  },
+  {
+   "quarter": "2019Q4",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_Nurse_2019_Q4_iwq5-t3v2.csv"
+  },
+  {
+   "quarter": "2020Q1",
+   "url": "https://data.cms.gov/sites/default/files/2021-10/bbd1bc7d-46cf-4df5-99ff-ba18e7605ccb/PBJ_dailynursestaffing_CY2020Q1.csv"
+  },
+  {
+   "quarter": "2020Q2",
+   "url": "https://data.cms.gov/sites/default/files/2020-11/PBJ_Nurse_Q2_2020_ym5d-ceq8.csv"
+  },
+  {
+   "quarter": "2020Q4",
+   "url": "https://data.cms.gov/sites/default/files/2021-07/pbj_daily_nurse_staffing_cy_2020q4.csv"
+  },
+  {
+   "quarter": "2021Q1",
+   "url": "https://data.cms.gov/sites/default/files/2022-02/472cc63b-d76f-4ae5-9258-0041843508f7/PBJ_dailynursestaffing_CY2021Q1.csv"
+  },
+  {
+   "quarter": "2021Q2",
+   "url": "https://data.cms.gov/sites/default/files/2021-10/e4ca12be-7096-412c-a3ab-e67a1669e3aa/PBJ_dailynursestaffing_CY2021Q2.csv"
+  },
+  {
+   "quarter": "2021Q3",
+   "url": "https://data.cms.gov/sites/default/files/2022-01/416c11d0-1ef7-4178-94a3-6b4ebeef4677/PBJ_dailynursestaffing_CY2021Q3.csv"
+  },
+  {
+   "quarter": "2021Q4",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/2adf6f4d-f402-4a6c-a428-e0156e6c2fdf/PBJ_dailynursestaffing_CY2021Q4.csv"
+  },
+  {
+   "quarter": "2022Q1",
+   "url": "https://data.cms.gov/sites/default/files/2022-07/c47359c6-4bba-4620-893c-69d54090f5ae/PBJ_dailynursestaffing_CY2022Q1.csv"
+  },
+  {
+   "quarter": "2022Q2",
+   "url": "https://data.cms.gov/sites/default/files/2022-10/e60c6df7-34d7-4239-b601-86c91e874029/PBJ_dailynursestaffing_CY2022Q2.csv"
+  },
+  {
+   "quarter": "2022Q3",
+   "url": "https://data.cms.gov/sites/default/files/2023-01/893d09c1-df09-41ef-b7b9-b47e9dbb6e05/PBJ_dailynursestaffing_CY2022Q3.csv"
+  },
+  {
+   "quarter": "2022Q4",
+   "url": "https://data.cms.gov/sites/default/files/2023-04/8ca96e0e-89f3-4457-a3c0-8a0957297f5b/PBJ_dailynursestaffing_CY2022Q4.csv"
+  },
+  {
+   "quarter": "2023Q1",
+   "url": "https://data.cms.gov/sites/default/files/2023-06/034ca96a-0dde-471f-acac-7750532e8edb/PBJ_dailynursestaffing_CY2023Q1.csv"
+  },
+  {
+   "quarter": "2023Q2",
+   "url": "https://data.cms.gov/sites/default/files/2023-10/5bd71a45-b092-4072-88b8-d40d54704d8c/PBJ_dailynursestaffing_CY2023Q2.csv"
+  },
+  {
+   "quarter": "2023Q3",
+   "url": "https://data.cms.gov/sites/default/files/2024-01/8e987728-d824-48a0-b041-2d3c7a0ee2e8/PBJ_dailynursestaffing_CY2023Q3.csv"
+  },
+  {
+   "quarter": "2023Q4",
+   "url": "https://data.cms.gov/sites/default/files/2024-04/0cd535dd-4611-4b0b-8380-65444c2f6236/PBJ_dailynursestaffing_CY2023Q4.csv"
+  },
+  {
+   "quarter": "2024Q1",
+   "url": "https://data.cms.gov/sites/default/files/2024-07/5273cb88-fb7c-4ea7-821a-2e1453044c64/PBJ_dailynursestaffing_CY2024Q1.csv"
+  },
+  {
+   "quarter": "2024Q2",
+   "url": "https://data.cms.gov/sites/default/files/2024-10/79f8602d-e17a-4ba3-9182-3287ccff9d3c/PBJ_dailynursestaffing_CY2024Q2.csv"
+  },
+  {
+   "quarter": "2024Q3",
+   "url": "https://data.cms.gov/sites/default/files/2025-01/0e5403bd-0ae6-4177-b2fa-ecd9e0944316/PBJ_dailynursestaffing_CY2024Q3.csv"
+  },
+  {
+   "quarter": "2024Q4",
+   "url": "https://data.cms.gov/sites/default/files/2025-04/4f8bee34-7c03-4bda-9ed9-756db4200310/PBJ_dailynursestaffing_CY2024Q4.csv"
+  },
+  {
+   "quarter": "2025Q1",
+   "url": "https://data.cms.gov/sites/default/files/2025-07/e8e9efa9-9498-4286-a31c-ed4e5548a30c/PBJ_dailynursestaffing_CY2025Q1.csv"
+  },
+  {
+   "quarter": "2025Q2",
+   "url": "https://data.cms.gov/sites/default/files/2025-10/0fd38f13-e99e-4b2f-8162-50603c89966d/PBJ_dailynursestaffing_CY2025Q2.csv"
+  },
+  {
+   "quarter": "2025Q3",
+   "url": "https://data.cms.gov/sites/default/files/2026-01/13db0b58-0df6-4288-8567-fc2a4f6ba415/PBJ_dailynursestaffing_CY2025Q3.csv"
+  },
+  {
+   "quarter": "2025Q4",
+   "url": "https://data.cms.gov/sites/default/files/2026-04/8f85c7d4-a1f6-4b36-ad20-17abc8aa57d2/PBJ_dailynursestaffing_CY2025Q4.csv"
+  },
+  {
+   "quarter": "2026Q1",
+   "url": "https://data.cms.gov/sites/default/files/2026-06/5c2f045b-7246-457a-9fac-c7fb92f7c352/PBJ_dailynursestaffing_CY2026Q1.csv"
+  },
+  {
+   "quarter": "2qky-49qq",
+   "url": "https://data.cms.gov/sites/default/files/2021-01/2qky-49qq.csv"
+  }
+ ],
+ "nonnurse": [
+  {
+   "quarter": "2017Q1",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/1e4cd29c-10e9-439b-975e-064f8fa775e9/PBJ_dailyNonnursestaffing_CY2017Q1.csv"
+  },
+  {
+   "quarter": "2017Q2",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/3866a9c2-2b45-47b2-b2f3-13f159f6147f/PBJ_dailyNonnursestaffing_CY2017Q2%20%281%29.csv"
+  },
+  {
+   "quarter": "2017Q3",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/aa533f14-7acc-4b70-b5d0-745fb98e913d/PBJ_dailyNonnursestaffing_CY2017Q3%20%282%29.csv"
+  },
+  {
+   "quarter": "2017Q4",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/8df1a39b-714e-47b9-aa17-e23b25fb6397/PBJ_dailyNonnursestaffing_CY2017Q4.csv"
+  },
+  {
+   "quarter": "2018Q1",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/356f39a6-7527-4642-8812-bece764407ac/PBJ_dailyNonnursestaffing_CY2018Q1.csv"
+  },
+  {
+   "quarter": "2018Q2",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/26f2f7a7-a24c-4206-b21a-e80cc1cea640/PBJ_dailyNonnursestaffing_CY2018Q2.csv"
+  },
+  {
+   "quarter": "2018Q3",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/3518f520-9ff8-4340-8cb3-5cee41a21d08/PBJ_dailyNonnursestaffing_CY2018Q3%20%284%29.csv"
+  },
+  {
+   "quarter": "2018Q4",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_NonNurse_2018_Q4_4xvm-t6kp.csv"
+  },
+  {
+   "quarter": "2019Q1",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_NonNurse_2019_Q1_dp6w-452n.csv"
+  },
+  {
+   "quarter": "2019Q2",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_NonNurse_2019_Q2_nxdr-vqyq.csv"
+  },
+  {
+   "quarter": "2019Q3",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_NonNurse_2019_Q3_5epz-i6b4.csv"
+  },
+  {
+   "quarter": "2019Q4",
+   "url": "https://data.cms.gov/sites/default/files/2020-10/PBJ_NonNurse_2019_Q4_aif9-utfe.csv"
+  },
+  {
+   "quarter": "2020Q1",
+   "url": "https://data.cms.gov/sites/default/files/2021-10/3a593779-6e24-4831-a892-04bb47bf4a9a/PBJ_dailyNonnursestaffing_CY2020Q1.csv"
+  },
+  {
+   "quarter": "2020Q2",
+   "url": "https://data.cms.gov/sites/default/files/2020-11/PBJ_NonNurse_Q2_2020_ca7a-55j7.csv"
+  },
+  {
+   "quarter": "2020Q4",
+   "url": "https://data.cms.gov/sites/default/files/2021-07/pbj_daily_non-nurse_staffing_cy_2020q4.csv"
+  },
+  {
+   "quarter": "2021Q1",
+   "url": "https://data.cms.gov/sites/default/files/2021-07/pbj_daily_non-nurse_staffing_cy_2021q1.csv"
+  },
+  {
+   "quarter": "2021Q2",
+   "url": "https://data.cms.gov/sites/default/files/2021-10/caf942e1-3e85-49fd-a66f-dfe92b122ba7/PBJ_dailyNonnursestaffing_CY2021Q2_0.csv"
+  },
+  {
+   "quarter": "2021Q3",
+   "url": "https://data.cms.gov/sites/default/files/2022-01/6460c80d-40b1-4de2-98ba-a850d0a30ffa/PBJ_dailyNonnursestaffing_CY2021Q3.csv"
+  },
+  {
+   "quarter": "2021Q4",
+   "url": "https://data.cms.gov/sites/default/files/2022-04/287acfdb-6cfa-4822-8120-2ace7eeede16/PBJ_dailyNonnursestaffing_CY2021Q4.csv"
+  },
+  {
+   "quarter": "2022Q1",
+   "url": "https://data.cms.gov/sites/default/files/2022-07/3a3cbd82-04f9-4675-ab84-b0cad6398998/PBJ_dailyNonnursestaffing_CY2022Q1.csv"
+  },
+  {
+   "quarter": "2022Q2",
+   "url": "https://data.cms.gov/sites/default/files/2022-10/e32dbad4-f975-48fd-ade9-b33fa244296a/PBJ_dailyNonnursestaffing_CY2022Q2.csv"
+  },
+  {
+   "quarter": "2022Q3",
+   "url": "https://data.cms.gov/sites/default/files/2023-01/f51658e7-a4f8-4711-ae29-98de30cfe5aa/PBJ_dailyNonnursestaffing_CY2022Q3.csv"
+  },
+  {
+   "quarter": "2022Q4",
+   "url": "https://data.cms.gov/sites/default/files/2023-04/4ace4212-2ca4-4d4a-810f-f9ec2c48a96e/PBJ_dailyNonnursestaffing_CY2022Q4.csv"
+  },
+  {
+   "quarter": "2023Q1",
+   "url": "https://data.cms.gov/sites/default/files/2023-06/ca6cd979-b204-4005-aed4-02c28fd134fe/PBJ_dailyNonnurseStaffing_CY2023Q1.csv"
+  },
+  {
+   "quarter": "2023Q2",
+   "url": "https://data.cms.gov/sites/default/files/2023-10/6548296e-1849-4968-b0e2-2a68c77288dd/PBJ_dailyNonnurseStaffing_CY2023Q2.csv"
+  },
+  {
+   "quarter": "2023Q3",
+   "url": "https://data.cms.gov/sites/default/files/2024-01/da7cceca-fbef-4461-8286-b8a777323344/PBJ_dailyNonnurseStaffing_CY2023Q3.csv"
+  },
+  {
+   "quarter": "2023Q4",
+   "url": "https://data.cms.gov/sites/default/files/2024-04/fd3e006f-315f-4e05-9b45-1c568dcb4bb5/PBJ_dailyNonnurseStaffing_CY2023Q4.csv"
+  },
+  {
+   "quarter": "2024Q1",
+   "url": "https://data.cms.gov/sites/default/files/2024-07/d48c6e27-2e27-47c2-bf3c-e493a07060ee/PBJ_dailyNonnursestaffing_CY2024Q1.csv"
+  },
+  {
+   "quarter": "2024Q2",
+   "url": "https://data.cms.gov/sites/default/files/2024-10/f9a724c1-1785-494f-b34d-1b66c1a53b8c/PBJ_dailyNonnursestaffing_CY2024Q2.csv"
+  },
+  {
+   "quarter": "2024Q3",
+   "url": "https://data.cms.gov/sites/default/files/2025-01/5f9ac3ee-c2f2-43f7-bfc1-f16298c0f193/PBJ_dailyNonnurseStaffing_CY2024Q3.csv"
+  },
+  {
+   "quarter": "2024Q4",
+   "url": "https://data.cms.gov/sites/default/files/2025-04/d7c8d025-eebb-4fcf-8620-339e7cd15bae/PBJ_dailyNonnurseStaffing_CY2024Q4.csv"
+  },
+  {
+   "quarter": "2025Q1",
+   "url": "https://data.cms.gov/sites/default/files/2025-07/52c0aaa9-bbc7-4eb4-bbc1-3f1b898a8820/PBJ_dailyNonnurseStaffing_CY2025Q1.csv"
+  },
+  {
+   "quarter": "2025Q2",
+   "url": "https://data.cms.gov/sites/default/files/2025-10/bf94ac3d-5960-406a-bb62-91cdfda15348/PBJ_dailyNonnurseStaffing_CY2025Q2.csv"
+  },
+  {
+   "quarter": "2025Q3",
+   "url": "https://data.cms.gov/sites/default/files/2026-01/60dc7727-15d5-4425-b269-c0b4297560fd/PBJ_dailyNonnurseStaffing_CY2025Q3.csv"
+  },
+  {
+   "quarter": "2025Q4",
+   "url": "https://data.cms.gov/sites/default/files/2026-04/2d661ddb-459f-48bd-b459-0a3930f66a0a/PBJ_dailyNonnurseStaffing_CY2025Q4.csv"
+  },
+  {
+   "quarter": "2026Q1",
+   "url": "https://data.cms.gov/sites/default/files/2026-06/461a86ca-7644-461c-b876-2f1854b3a6ce/PBJ_dailyNonnurseStaffing_CY2026Q1.csv"
+  },
+  {
+   "quarter": "78y2-smqp",
+   "url": "https://data.cms.gov/sites/default/files/2021-01/78y2-smqp.csv"
+  }
+ ]
+}

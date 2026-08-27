@@ -12,6 +12,7 @@ import { BENCHMARKS } from "@/lib/benchmarks";
 import { getCmsChainById, getCmsChainProfile } from "@/lib/data/cmsChains";
 import { getFacilitiesByChain, getChainFacilityRollup, getChainRollupTrends, getChainChowRecent } from "@/lib/data";
 import { getChainOwnership } from "@/lib/ownershipOverrides";
+import { getChainPbjTrend } from "@/lib/data/pbj";
 import { CmsChainProfileView } from "@/components/CmsChainProfileView";
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
@@ -39,7 +40,8 @@ export default async function ChainPage({ params }: { params: { id: string } }) 
       getChainRollupTrends(params.id),
       getChainChowRecent(params.id, 2023),
     ]);
-    return <CmsChainProfileView profile={cmsProfile} members={members} rollup={rollup} trends={trends} chowRecent={chowRecent} ownership={getChainOwnership(params.id)} />;
+    const pbj = getChainPbjTrend(members.map((m) => m.facility.ccn));
+    return <CmsChainProfileView profile={cmsProfile} members={members} rollup={rollup} trends={trends} chowRecent={chowRecent} pbj={pbj} ownership={getChainOwnership(params.id)} />;
   }
 
   const chain = await getChain(params.id);

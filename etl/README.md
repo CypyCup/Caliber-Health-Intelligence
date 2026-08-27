@@ -78,6 +78,26 @@ python3 etl/build_seed.py            # join -> facilities/owners/chains/snapshot
 Set the state / quarters in `config.py` (`STATE = "TX"`; `STATE = None` for national),
 or pass `--state` to `run_national.py`.
 
+### PBJ staffing & agency layer
+
+`ingest_pbj.py` reads the verified PBJ atlas parquet (from `etl/pbj_toolkit/`) into
+a compact facility-quarter seed (`data/seed/pbj/`). It stores **raw numerators and
+denominators** per facility-quarter so every roll-up above the facility is computed
+as `sum(numerator) / sum(denominator)` — never an average of facility percentages.
+Agency = contract hours ÷ nurse hours (null where the denominator is zero); HPRD is
+reported, not case-mix adjusted.
+
+```bash
+pip install pandas pyarrow
+# drop the atlas parquet in etl/raw/pbj/, then:
+python3 etl/ingest_pbj.py
+```
+
+**Refresh (`etl/pbj_toolkit/`):** `pbj_pipeline.py → derive.py → verify.py` re-pull a
+new CMS quarter (posted ~2 quarters in arrears), correcting the 2017Q2 scrambled
+headers and cp1252 encoding, and re-reading `data.cms.gov/data.json` each run — CMS
+URLs are never hardcoded. Then re-run `ingest_pbj.py`.
+
 ### The point-in-time archive
 
 Every Provider Data Catalog fetch is captured under a UTC timestamp in

@@ -62,8 +62,8 @@ export function TrendChart({ metric, height = 150 }: { metric: ResolvedMetric; h
       <path d={line} fill="none" stroke={stroke} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       {history.map((h, i) => (
         <g key={h.period}>
-          <circle cx={x(i)} cy={y(h.value)} r="2.4" fill={stroke} />
-          {(i === 0 || i === history.length - 1 || i % 2 === 0) && (
+          <circle cx={x(i)} cy={y(h.value)} r={history.length > 16 ? 1.5 : 2.4} fill={stroke} />
+          {(i === history.length - 1 || (i % Math.max(1, Math.ceil(history.length / 6)) === 0 && history.length - 1 - i >= Math.max(1, Math.ceil(history.length / 6)))) && (
             <text
               x={x(i)}
               y={height - 8}

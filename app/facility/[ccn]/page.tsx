@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getFacility, getFacilityProfile, getFacilityChow } from "@/lib/data";
+import { getFacilityPbjSeries, getFacilityPbjMetrics, getPbjMeta } from "@/lib/data/pbj";
+import { PbjSection } from "@/components/PbjSection";
 import { isRegistered } from "@/lib/auth";
 import { RegistrationWall } from "@/components/RegistrationWall";
 import { MetricCard } from "@/components/MetricCard";
@@ -34,6 +36,9 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
   ]);
   if (!profile) notFound();
   const { metrics, flags, owner, chain } = profile;
+  const pbjSeries = getFacilityPbjSeries(params.ccn);
+  const pbjMetrics = getFacilityPbjMetrics(params.ccn);
+  const pbjFlagged = getPbjMeta()?.flagged_quarters ?? {};
 
   const total = metrics["total_nurse_hprd"];
   const turnover = metrics["total_nurse_turnover_pct"];
@@ -131,6 +136,9 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
           <RiskFlagList flags={flags} />
         </div>
       </section>
+
+      {/* PBJ staffing & agency (quarterly) */}
+      <PbjSection series={pbjSeries} agency={pbjMetrics.agency} hprd={pbjMetrics.hprd} flagged={pbjFlagged} />
 
       {/* Trends */}
       <section className="mt-10">

@@ -9,6 +9,7 @@ import { METRIC_DEFINITIONS, METRIC_BY_KEY } from "../metrics";
 import { computeFacilityRiskFlags, sortFlags } from "../riskFlags";
 import { BENCHMARKS } from "../benchmarks";
 import { getCmsChainById } from "./cmsChains";
+import { getFacilityAgencyMetric } from "./pbj";
 import { getChainOwnership } from "../ownershipOverrides";
 import {
   buildSearchRow, matchesQuery, refineSearchRows,
@@ -152,6 +153,8 @@ function ensureIndex(): void {
   _searchRows = [];
   for (const f of facilities()) {
     const metrics = resolveFacilityMetrics(f.ccn);
+    const agency = getFacilityAgencyMetric(f.ccn);
+    if (agency) metrics["contract_staff_pct"] = agency;
     const flags = sortFlags(computeFacilityRiskFlags(metrics, f));
     _flagsByCcn[f.ccn] = flags;
     const chain = f.chain_id ? getCmsChainById(f.chain_id) : undefined;
@@ -212,6 +215,10 @@ export async function getFacilityProfile(ccn: string): Promise<FacilityProfile |
   const facility = byCcn()[ccn];
   if (!facility) return undefined;
   const metrics = resolveFacilityMetrics(ccn);
+  // Inject real PBJ agency reliance (contract_staff_pct) so the agency-reliance
+  // risk flag and workforce scorecard reflect actual PBJ contract-hours data.
+  const agency = getFacilityAgencyMetric(ccn);
+  if (agency) metrics["contract_staff_pct"] = agency;
   const flags = sortFlags(computeFacilityRiskFlags(metrics, facility));
   const cms = facility.chain_id ? getCmsChainById(facility.chain_id) : undefined;
   const own = getChainOwnership(facility.chain_id);

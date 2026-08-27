@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { CmsChainProfile, ResolvedChainMetric } from "@/lib/data/cmsChains";
 import type { ChainFacilityRollup, ChainTrends } from "@/lib/data";
+import type { ChainPbjPoint } from "@/lib/data/pbj";
+import type { ResolvedMetric } from "@/lib/types";
 import type { ChainOwnership } from "@/lib/ownershipOverrides";
 import { CHAIN_METRICS_BY_CATEGORY } from "@/lib/cmsChainMetrics";
 import { CATEGORY_LABELS } from "@/lib/metrics";
@@ -32,6 +34,7 @@ export function CmsChainProfileView({
   rollup,
   trends,
   chowRecent = [],
+  pbj,
   ownership,
 }: {
   profile: CmsChainProfile;
@@ -39,6 +42,7 @@ export function CmsChainProfileView({
   rollup?: ChainFacilityRollup;
   trends?: ChainTrends;
   chowRecent?: { ccn: string; name: string; tx: { date: string; buyer: string; seller: string; type: string; year: string } }[];
+  pbj?: { history: ChainPbjPoint[]; agency?: ResolvedMetric; hprd?: ResolvedMetric };
   ownership?: ChainOwnership;
 }) {
   const { chain, metrics, flags, national, latestPeriod } = profile;
@@ -186,6 +190,37 @@ export function CmsChainProfileView({
           </section>
         );
       })}
+
+      {/* Agency & staffing (PBJ) — census-weighted roll-up over members */}
+      {pbj && pbj.history.length > 0 && (pbj.agency?.history.length ?? 0) >= 2 && (
+        <section className="mt-10">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-semibold text-ink">Agency &amp; staffing (PBJ)</h2>
+            <span className="pill bg-brand-tint text-brand border border-brand/20">CHI-computed</span>
+          </div>
+          <p className="mt-1 max-w-3xl text-sm text-ink-soft">
+            Census-weighted across member facilities — sum(contract hours) ÷ sum(nurse hours), never
+            an average of facility percentages. Attributed to <em>current</em> ownership (the Atlas has
+            no dated chain history), and computed over full-quarter (100% completeness) submissions.
+          </p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            {pbj.agency && (
+              <div className="card p-4">
+                <p className="font-medium text-ink">Agency reliance</p>
+                <p className="text-xs text-ink-faint">% of nurse hours · {pbj.agency.history.length} quarters</p>
+                <div className="mt-2"><TrendChart metric={pbj.agency} /></div>
+              </div>
+            )}
+            {pbj.hprd && pbj.hprd.history.length >= 2 && (
+              <div className="card p-4">
+                <p className="font-medium text-ink">Total nurse staffing</p>
+                <p className="text-xs text-ink-faint">HPRD · {pbj.hprd.history.length} quarters</p>
+                <div className="mt-2"><TrendChart metric={pbj.hprd} /></div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* M&A activity — CMS Change of Ownership among member facilities */}
       {chowRecent.length > 0 && (

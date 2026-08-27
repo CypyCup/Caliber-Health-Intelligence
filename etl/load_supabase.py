@@ -92,7 +92,26 @@ def main() -> None:
                              "value": value, "vintage_date": f"{period}-01", "source": "chain_performance"})
     upsert("chain_metric_snapshots", rows, "chain_id,metric_key,period")
 
-    # 5) National benchmark row -> key/value.
+    # 5) PBJ staffing (raw numerators/denominators per facility-quarter).
+    try:
+        pbj = load_json(os.path.join(NATIONAL, "..", "pbj", "facility_pbj.json"))
+        cols = pbj["cols"]  # rd,tnh,tnc,rnh,lpnh,aideh,allh,allc,comp
+        field = ["resident_days", "total_nurse_hours", "total_nurse_contract_hours", "rn_hours",
+                 "lpn_hours", "aide_hours", "total_hours_all_staff", "total_contract_hours_all_staff",
+                 "reporting_completeness_pct"]
+        prows = []
+        for ccn, byq in pbj["values"].items():
+            for q, vals in byq.items():
+                row = {"ccn": ccn, "cy_qtr": q}
+                row.update({field[i]: vals[i] for i in range(len(cols))})
+                prows.append(row)
+                if len(prows) >= 50000:
+                    upsert("pbj_facility_quarter", prows, "ccn,cy_qtr"); prows = []
+        upsert("pbj_facility_quarter", prows, "ccn,cy_qtr")
+    except FileNotFoundError:
+        print("  (no PBJ seed — skipping)")
+
+    # 6) National benchmark row -> key/value.
     national = load_json(os.path.join(CHAINS, "national.json"))
     period = national.get("period")
     vintage = national.get("vintage_date")
