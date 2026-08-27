@@ -3,6 +3,7 @@ import { SOURCES } from "@/lib/metrics";
 import { BENCHMARKS } from "@/lib/benchmarks";
 import { getSeedMeta, getArchiveInfo } from "@/lib/data";
 import { getCmsChainMeta } from "@/lib/data/cmsChains";
+import { NationalAgencyChart } from "@/components/NationalAgencyChart";
 
 export const metadata: Metadata = { title: "Methodology & sources" };
 export const revalidate = 3600;
@@ -57,6 +58,17 @@ export default async function MethodologyPage() {
             body="A short quarterly instrument fielded to SNF HR and operations leaders on wage movement, agency use, open requisitions, and sign-on bonuses. Federal data lags by construction; a panel fielded mid-quarter reports that quarter. It is primary collection gated on written ADP approval, so it is not live in the Atlas — the Atlas is its recruitment surface. No panel figures are shown until the panel reaches publishable scale."
           />
         </div>
+      </section>
+
+      {/* National PBJ agency bubble — what the archive makes visible */}
+      <section className="mt-10">
+        <h2 className="text-xl font-semibold text-ink">What nine years of PBJ shows</h2>
+        <p className="mt-1 max-w-3xl text-sm text-ink-soft">
+          Payroll-verified staffing (PBJ) is the current backbone&apos;s deepest series. Rolled up
+          nationally by summing hours (never averaging facility rates), it captures the sector&apos;s
+          agency-staffing bubble — and every facility and chain page carries the same 30+ quarters.
+        </p>
+        <div className="mt-4"><NationalAgencyChart /></div>
       </section>
 
       {/* Vintage — now framed as the quality floor */}

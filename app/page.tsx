@@ -3,6 +3,7 @@ import { getSeedMeta, searchFacilities } from "@/lib/data";
 import { getCmsChainsDirectory, getCmsChainMeta } from "@/lib/data/cmsChains";
 import { SearchBox } from "@/components/SearchBox";
 import { PanelCTA } from "@/components/PanelCTA";
+import { NationalAgencyChart } from "@/components/NationalAgencyChart";
 
 // ISR: serve fast, refresh hourly so Supabase-backed deployments aren't stale.
 export const revalidate = 3600;
@@ -86,6 +87,15 @@ export default async function HomePage() {
           claims are built only on genuinely current sources. That discipline is table stakes, not the
           moat — the moat is the asset above.
         </p>
+
+        <div className="mt-8">
+          <NationalAgencyChart />
+          <p className="mt-2 max-w-3xl text-sm text-ink-soft">
+            Nine years of payroll-verified staffing (PBJ) let the Atlas show the sector&apos;s agency
+            boom and unwind — reliance more than quintupled into 2022, then fell by half. Every
+            facility and chain carries this history.
+          </p>
+        </div>
       </section>
 
       {/* Chains / portfolio lens */}
