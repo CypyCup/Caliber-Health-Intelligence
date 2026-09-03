@@ -1,0 +1,88 @@
+name: Monthly CMS refresh
+
+# Pull the latest public CMS files, load the new vintage into Supabase, and
+# commit the refreshed seed back so the live (bundled-seed) site redeploys on
+# Vercel. Each run ADDS a monthly vintage — the point-in-time history deepens
+# over time (the ingesters merge the new month into the committed history rather
+# than rebuilding from the raw CSVs, which CI does not keep).
+#
+# Requires, in the repo's Settings:
+#   Secrets  → SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   (Actions secrets)
+#   Variable → CHAIN_PERFORMANCE_CSV_URL                 (optional; the "Download
+#              CSV" link from the Chain Performance Measures dataset page — its
+#              CMS catalog has no query API, so it can't be auto-resolved. If
+#              unset, the chain step is skipped and facilities still refresh.)
+
+on:
+  schedule:
+    - cron: "0 8 5 * *" # 08:00 UTC on the 5th of each month
+  workflow_dispatch:
+    inputs:
+      chain_csv_url:
+        description: "Chain Performance Measures CSV URL (overrides the repo variable for this run)"
+        required: false
+        type: string
+
+permissions:
+  contents: write # to commit the refreshed seed back
+
+concurrency:
+  group: monthly-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ETL dependencies
+        run: python -m pip install -r etl/requirements.txt
+
+      - name: Refresh Provider Information (facilities + monthly history)
+        run: python etl/fetch_datasets.py provider_info
+
+      - name: Refresh Chain Performance Measures (chains)
+        id: chains
+        env:
+          CHAIN_URL: ${{ github.event.inputs.chain_csv_url || vars.CHAIN_PERFORMANCE_CSV_URL }}
+        run: |
+          if [ -n "$CHAIN_URL" ]; then
+            python etl/fetch_datasets.py chain_performance --url "$CHAIN_URL"
+            echo "refreshed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::CHAIN_PERFORMANCE_CSV_URL not set — skipping chain refresh (facilities still refreshed)."
+            echo "refreshed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Load the new vintage into Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not set — skipping DB load (seed is still committed)."
+            exit 0
+          fi
+          STEPS="facilities metric_snapshots"
+          if [ "${{ steps.chains.outputs.refreshed }}" = "true" ]; then
+            STEPS="$STEPS cms_chains chain_metric_snapshots chain_national"
+          fi
+          echo "Loading steps: $STEPS"
+          python etl/load_supabase.py $STEPS
+
+      - name: Commit the refreshed seed
+        run: |
+          git config user.name "caliber-refresh-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/seed; then
+            echo "::notice::No CMS changes this cycle — nothing to commit."
+            exit 0
+          fi
+          git add data/seed
+          git commit -m "chore(data): monthly CMS refresh ($(date -u +%Y-%m-%d))"
+          git push

@@ -130,14 +130,39 @@ def main() -> None:
         archive_capture("provider_info", archive_rows, key_fields=("ccn",))
         print(f"  ingested {period}: {len(values_by_period[period])} facilities")
 
-    latest = sorted(set(periods))[-1]
+    # Merge with any existing committed history so a monthly refresh ADDS a
+    # vintage instead of rebuilding from only the CSVs on disk. Each Provider
+    # Information file is a single point-in-time month, and CI keeps the compact
+    # seed in git but NOT the raw CSVs (etl/raw is gitignored) — so without this
+    # merge a refresh would collapse the accumulated history to the one new month.
+    hist_path = os.path.join(OUT_DIR, "facility_history.json")
+    merged: dict[str, dict] = {}
+    existing_latest = ""
+    if os.path.exists(hist_path):
+        try:
+            with open(hist_path, encoding="utf-8") as f:
+                prev = json.load(f)
+            merged.update(prev.get("periods", {}))
+            existing_latest = prev.get("latest_period", "") or (
+                max(prev.get("periods", {})) if prev.get("periods") else "")
+        except Exception:
+            merged = {}
+    for p in sorted(set(periods)):  # freshly ingested periods win over stale copies
+        merged[p] = values_by_period[p]
+
+    all_periods = sorted(merged)
+    latest = all_periods[-1]
+    raw_latest = sorted(set(periods))[-1]
+
     os.makedirs(OUT_DIR, exist_ok=True)
-    _write(os.path.join(OUT_DIR, "facilities.json"), list(facilities.values()))
+    # Never downgrade descriptors to a snapshot older than what we already hold.
+    if raw_latest >= existing_latest:
+        _write(os.path.join(OUT_DIR, "facilities.json"), list(facilities.values()))
     # Compact per-period values (all vintages). The backend derives latest +
-    # month-over-month from this; a single file means one period (no trend yet).
-    _write(os.path.join(OUT_DIR, "facility_history.json"), {
+    # month-over-month from this.
+    _write(hist_path, {
         "source": "provider", "latest_period": latest, "vintage_date": f"{latest}-01",
-        "periods": {p: values_by_period[p] for p in sorted(set(periods))},
+        "periods": {p: merged[p] for p in all_periods},
     })
     chained = sum(1 for x in facilities.values() if x["chain_id"])
     _write(os.path.join(OUT_DIR, "meta.json"), {
@@ -147,10 +172,11 @@ def main() -> None:
         "facilities": len(facilities),
         "chained_facilities": chained,
         "independent_facilities": len(facilities) - chained,
-        "periods": sorted(set(periods)),
+        "periods": all_periods,
         "latest_period": latest,
     })
-    print(f"Wrote {len(facilities)} facilities ({chained} chained), periods={sorted(set(periods))} -> {OUT_DIR}")
+    print(f"Wrote {len(facilities)} facilities ({chained} chained); "
+          f"history now spans {len(all_periods)} periods {all_periods} -> {OUT_DIR}")
 
 
 def _write(path: str, obj) -> None:
