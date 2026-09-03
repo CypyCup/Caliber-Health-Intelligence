@@ -64,7 +64,8 @@ create table if not exists cms_chains (
   abuse_pct        double precision,
   pct_for_profit   double precision,
   pct_non_profit   double precision,
-  pct_government   double precision
+  pct_government   double precision,
+  last_period      text            -- newest snapshot the chain appeared in
 );
 
 -- Chain metric time-series (one row per chain / metric / month).
