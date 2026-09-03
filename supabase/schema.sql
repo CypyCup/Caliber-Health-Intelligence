@@ -82,8 +82,11 @@ create index if not exists idx_chainsnap_metric on chain_metric_snapshots(metric
 
 -- PBJ staffing (raw numerators/denominators per facility-quarter; derive HPRD/
 -- agency as sum(numerator)/sum(denominator), never averaging facility percentages).
+-- NOTE: no FK to facilities — PBJ is a historical superset (2017→present) and
+-- covers facilities that have since closed and are absent from the current
+-- Provider Information snapshot. A hard FK would reject those valid rows.
 create table if not exists pbj_facility_quarter (
-  ccn                             text not null references facilities(ccn) on delete cascade,
+  ccn                             text not null,
   cy_qtr                          text not null,
   resident_days                   double precision,
   total_nurse_hours               double precision,
@@ -97,6 +100,7 @@ create table if not exists pbj_facility_quarter (
   primary key (ccn, cy_qtr)
 );
 create index if not exists idx_pbj_qtr on pbj_facility_quarter(cy_qtr);
+create index if not exists idx_pbj_ccn on pbj_facility_quarter(ccn);
 
 -- National benchmark row (latest vintage), as key/value.
 create table if not exists chain_national (
