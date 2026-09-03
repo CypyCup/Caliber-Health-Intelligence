@@ -25,6 +25,7 @@ Note: data.cms.gov must be reachable from where this runs.
 from __future__ import annotations
 
 import argparse
+import csv
 import os
 from datetime import datetime, timezone
 
@@ -72,6 +73,44 @@ def download(url: str, folder: str, period: str) -> str:
     return dest
 
 
+def download_data_api_as_csv(url: str, folder: str, period: str) -> str:
+    """CMS Open Data API (data-api/v1) returns JSON records; page through them and
+    write the CSV the ingesters expect. The API's field names are the dataset's
+    column titles — the same names the ingesters match on — so a stable "Latest"
+    API URL can replace a manual CSV-download link that changes each month."""
+    base = url.split("?")[0]
+    rows: list[dict] = []
+    size, offset = 5000, 0
+    while True:
+        page = get_json(base, {"size": size, "offset": offset})
+        if not isinstance(page, list) or not page:
+            break
+        rows.extend(page)
+        if len(page) < size:
+            break
+        offset += size
+    if not rows:
+        raise SystemExit(f"No rows returned from {base}")
+    # Column order: first row's keys, then any extra keys later rows introduce.
+    cols: list[str] = []
+    seen: set[str] = set()
+    for r in rows:
+        for k in r.keys():
+            if k not in seen:
+                seen.add(k)
+                cols.append(k)
+    dest_dir = os.path.join(RAW_DIR, folder)
+    os.makedirs(dest_dir, exist_ok=True)
+    dest = os.path.join(dest_dir, f"{period}.csv")
+    with open(dest, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: ("" if r.get(k) is None else r.get(k)) for k in cols})
+    print(f"  wrote {len(rows):,} rows x {len(cols)} cols -> {dest}")
+    return dest
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("dataset", choices=list(CSV_DATASETS.keys()))
@@ -82,9 +121,15 @@ def main() -> None:
     cfg = CSV_DATASETS[args.dataset]
 
     if args.url:
-        guessed = period_from_filename(args.url)
-        period = args.period or (guessed if guessed.count("-") == 1 and guessed[:2] == "20" else _now_month())
-        download(args.url, cfg["folder"], period)
+        if "/data-api/" in args.url:
+            # CMS Open Data API endpoint (JSON) — page + convert to CSV. The
+            # period only names the raw file; the chain ingester derives real
+            # periods from each row's snapshot_release column.
+            download_data_api_as_csv(args.url, cfg["folder"], args.period or _now_month())
+        else:
+            guessed = period_from_filename(args.url)
+            period = args.period or (guessed if guessed.count("-") == 1 and guessed[:2] == "20" else _now_month())
+            download(args.url, cfg["folder"], period)
     elif cfg["source"] == "provider-data":
         url, modified = resolve_provider_data_csv(cfg["title"])
         download(url, cfg["folder"], args.period or _period_from_modified(modified))

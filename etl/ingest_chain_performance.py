@@ -151,24 +151,50 @@ def main() -> None:
                         history[chain_id][k][period] = round(val, 4)
             archive_capture("chain_performance", archive_rows, key_fields=("chain_id", "period"))
 
-    periods = sorted(all_periods)
-    latest = periods[-1] if periods else ""
-    national_latest = national_hist.get(latest, {})
-
-    # Tag each chain with the newest snapshot it appeared in; "current" chains
-    # are those present in the latest snapshot (others entered/exited the file).
+    # Tag each freshly-seen chain with the newest snapshot it appeared in.
     for cid, c in chains.items():
         c["last_period"] = chain_desc_period.get(cid, "")
-    current = sum(1 for c in chains.values() if c["last_period"] == latest)
+    fresh_hist = {cid: {mk: dict(pv) for mk, pv in ms.items()} for cid, ms in history.items()}
 
-    # Compact nested history (chain_id -> metric -> period -> value).
-    hist_out = {cid: {mk: dict(pv) for mk, pv in ms.items()} for cid, ms in history.items()}
+    # Merge with the existing committed chain seed so a refresh ADDS snapshots and
+    # can never shrink the history — insurance in case a pull (e.g. the Open Data
+    # API "Latest" endpoint) returns fewer snapshot_release rows than we hold. A
+    # normal full-file ingest overlays identical values, so this is a no-op there.
+    prev_hist = _load_json(os.path.join(OUT_DIR, "chain_history.json")) or {}
+    prev_nat = _load_json(os.path.join(OUT_DIR, "national_history.json")) or {}
+    prev_chains = {c.get("id"): c for c in (_load_json(os.path.join(OUT_DIR, "chains.json")) or [])}
+
+    merged_vals: dict[str, dict[str, dict[str, float]]] = {
+        cid: {mk: dict(pv) for mk, pv in ms.items()}
+        for cid, ms in (prev_hist.get("values") or {}).items()
+    }
+    for cid, ms in fresh_hist.items():
+        dst = merged_vals.setdefault(cid, {})
+        for mk, pv in ms.items():
+            dst.setdefault(mk, {}).update(pv)  # fresh period values win
+
+    merged_nat = dict(prev_nat.get("periods") or {})
+    merged_nat.update(national_hist)
+
+    merged_chains = dict(prev_chains)
+    for cid, c in chains.items():
+        # Only overwrite a descriptor with one from a period at least as new.
+        if c.get("last_period", "") >= (merged_chains.get(cid) or {}).get("last_period", ""):
+            merged_chains[cid] = c
+
+    periods = sorted(
+        {p for ms in merged_vals.values() for pv in ms.values() for p in pv} | set(merged_nat)
+    )
+    latest = periods[-1] if periods else ""
+    national_latest = merged_nat.get(latest, {})
+    # "current" chains are those present in the latest snapshot (others exited).
+    current = sum(1 for c in merged_chains.values() if c.get("last_period", "") == latest)
 
     os.makedirs(OUT_DIR, exist_ok=True)
-    _write(os.path.join(OUT_DIR, "chains.json"), list(chains.values()))
-    _write(os.path.join(OUT_DIR, "chain_history.json"), {"latest_period": latest, "periods": periods, "values": hist_out})
+    _write(os.path.join(OUT_DIR, "chains.json"), list(merged_chains.values()))
+    _write(os.path.join(OUT_DIR, "chain_history.json"), {"latest_period": latest, "periods": periods, "values": merged_vals})
     _write(os.path.join(OUT_DIR, "national.json"), national_latest)
-    _write(os.path.join(OUT_DIR, "national_history.json"), {"periods": {p: national_hist[p] for p in periods if p in national_hist}})
+    _write(os.path.join(OUT_DIR, "national_history.json"), {"periods": {p: merged_nat[p] for p in periods if p in merged_nat}})
     _write(os.path.join(OUT_DIR, "meta.json"), {
         "dataset": "CMS Nursing Home Chain Performance Measures",
         "source": "https://data.cms.gov/quality-of-care/nursing-home-chain-performance-measures",
@@ -176,12 +202,12 @@ def main() -> None:
         "periods": periods,
         "latest_period": latest,
         "chains": current,
-        "chains_all_time": len(chains),
-        "national_facilities": int(national_latest.get("num_facilities") or 0),
+        "chains_all_time": len(merged_chains),
+        "national_facilities": int((national_latest or {}).get("num_facilities") or 0),
     })
-    total_pts = sum(len(pv) for ms in history.values() for pv in ms.values())
-    print(f"Wrote {len(chains)} chains ({current} current), {total_pts} metric points, "
-          f"{len(periods)} periods ({periods[0]}..{latest}) -> {OUT_DIR}")
+    total_pts = sum(len(pv) for ms in merged_vals.values() for pv in ms.values())
+    print(f"Wrote {len(merged_chains)} chains ({current} current), {total_pts} metric points, "
+          f"{len(periods)} periods ({periods[0] if periods else '—'}..{latest}) -> {OUT_DIR}")
 
 
 # Remove the obsolete flat metrics file if present.
@@ -194,6 +220,18 @@ def _cleanup():
 def _write(path: str, obj) -> None:
     with open(path, "w") as f:
         json.dump(obj, f, separators=(",", ":"))
+
+
+def _load_json(path: str):
+    """Load a JSON seed file if present, else None (used to merge new snapshots
+    onto the existing committed chain history)."""
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+    return None
 
 
 if __name__ == "__main__":

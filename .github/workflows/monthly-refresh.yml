@@ -8,18 +8,20 @@ name: Monthly CMS refresh
 #
 # Requires, in the repo's Settings:
 #   Secrets  → SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   (Actions secrets)
-#   Variable → CHAIN_PERFORMANCE_CSV_URL                 (optional; the "Download
-#              CSV" link from the Chain Performance Measures dataset page — its
-#              CMS catalog has no query API, so it can't be auto-resolved. If
-#              unset, the chain step is skipped and facilities still refresh.)
+#   Variable → CHAIN_PERFORMANCE_URL                     (optional; the Chain
+#              Performance Measures source URL. Recommended: the stable Open Data
+#              API "Latest" JSON endpoint from the dataset page's "Access API"
+#              (…/data-api/v1/dataset/<id>/data) — it's paged + converted to CSV
+#              automatically. A direct .csv link also works. If unset, the chain
+#              step is skipped and facilities still refresh.)
 
 on:
   schedule:
     - cron: "0 8 5 * *" # 08:00 UTC on the 5th of each month
   workflow_dispatch:
     inputs:
-      chain_csv_url:
-        description: "Chain Performance Measures CSV URL (overrides the repo variable for this run)"
+      chain_url:
+        description: "Chain Performance Measures source URL — Open Data API 'Latest' JSON endpoint or a .csv link (overrides the repo variable for this run)"
         required: false
         type: string
 
@@ -49,13 +51,13 @@ jobs:
       - name: Refresh Chain Performance Measures (chains)
         id: chains
         env:
-          CHAIN_URL: ${{ github.event.inputs.chain_csv_url || vars.CHAIN_PERFORMANCE_CSV_URL }}
+          CHAIN_URL: ${{ github.event.inputs.chain_url || vars.CHAIN_PERFORMANCE_URL }}
         run: |
           if [ -n "$CHAIN_URL" ]; then
             python etl/fetch_datasets.py chain_performance --url "$CHAIN_URL"
             echo "refreshed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::CHAIN_PERFORMANCE_CSV_URL not set — skipping chain refresh (facilities still refreshed)."
+            echo "::notice::CHAIN_PERFORMANCE_URL not set — skipping chain refresh (facilities still refreshed)."
             echo "refreshed=false" >> "$GITHUB_OUTPUT"
           fi
 
