@@ -72,18 +72,27 @@ real FY2025 `nmrc`, confirmed by the cost report's own arithmetic identities
   non-operating "other income", which can mask a loss-making care business —
   e.g. one validated report showed −10.6% operating vs +$6.0M net income).
 
-**Labor — Worksheet S-3 Part II `S300002`:**
+**Labor — Worksheet A `A000000`, grand-total line `10000`:**
 | Field | LINE_NUM | CLMN_NUM | Check |
 |---|---|---|---|
-| Total salaries | `00100` | `00100` | = line 1100 + line 900 ✓ |
-| Total paid hours | `00100` | `00500` | col 6 = salaries ÷ hours ✓ |
-- **Salary intensity** = total salaries ÷ total operating expenses → the v1
-  free-teaser labor metric (rock-solid; observed 31–56%).
-- **Contract labor** (the direct-dollar analogue of PBJ agency hours) —
-  ⚠️ **deferred.** Candidate lines in `S300002` (e.g. 900 / 1200) are plausible
-  but their labels can't be confirmed from values alone; pin against PRM Ch 41
-  (or a filed S-3 Part II on snfdata.com) before publishing a contract-labor
-  figure. The ingester captures the full S-3 Part II grid so nothing is lost.
+| Total salaries | `10000` | `00100` | = Worksheet S-3 Part II line-1 salaries, exactly ✓ |
+| Total contract labor | `10000` | `00200` | col3 = col1 + col2 identity ⇒ col2 = contract labor ✓ |
+| Total cost | `10000` | `00900` | ≈ G-3 total operating expenses (~0.2%) ✓ |
+
+(Plus Worksheet S-3 Part II `S300002` line `00100` col `00500` = total paid hours,
+a bonus that ties to PBJ hours.)
+
+On Form **2540-24**, contract labor is a **dedicated column (col 2) on Worksheet
+A**, spanning all cost-center lines; the grand-total line `10000` carries the
+facility totals directly (no summing of detail lines, which would double-count
+subtotals). Confirmed against real data by two independent checks: the
+col3 = col1 + col2 identity, and col 1 matching the S-3 Part II salary total
+exactly.
+
+- **Salary intensity** = total salaries ÷ total operating expenses.
+- **Contract-labor share** = contract labor ÷ (salaries + contract labor) → the
+  v1 free-teaser labor metric: the **dollar analogue of the PBJ agency-hours %**
+  (observed 0–33% across sample facilities).
 
 ## 4. Vintage, caveats, volume
 

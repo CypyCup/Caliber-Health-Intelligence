@@ -12,13 +12,19 @@ Input (drop the extracted CSVs in etl/raw/hcris/ — any subfolders are fine):
   (the huge *_nmrc.csv is streamed and filtered to ~6 coordinates; *_alpha and
    *_rollup are not needed.)
 
-Coordinates were pinned against a real FY2025 file and validated by the cost
-report's own arithmetic identities (net patient rev = gross − allowances, etc.):
+Coordinates were pinned against a real FY2025 (Form 2540-24) file and validated
+by the cost report's own arithmetic identities:
   Margin  — Worksheet G-3 (WKSHT_CD "G300000"), column 00100:
-    line 00100 total patient revenue · 00300 net patient revenue ·
-    00400 total operating expenses · 03200 net income (loss) for the period
-  Labor   — Worksheet S-3 Part II (WKSHT_CD "S300002"):
-    line 00100 col 00100 total salaries · col 00500 total paid hours
+    line 00100 total patient revenue · 00300 net patient revenue
+    (= 00100 − 00200 ✓) · 00400 total operating expenses ·
+    03200 net income (loss) for the period
+  Labor   — Worksheet A (WKSHT_CD "A000000"), grand-total line 10000:
+    col 00100 total salaries · col 00200 total contract labor
+    (col3 = col1 + col2 identity confirms col2 = contract labor; col1 also
+     matches Worksheet S-3 Part II line-1 salaries exactly) · col 00900 total
+     cost (≈ G-3 operating expenses)
+  Hours   — Worksheet S-3 Part II (WKSHT_CD "S300002") line 00100 col 00500
+    total paid hours (bonus; ties to PBJ hours)
 
 Raw dollars are stored (never ratios), so chain roll-ups sum numerators and
 denominators — margins/intensities are derived as sum/sum, never averaged.
@@ -44,14 +50,19 @@ COORDS = {
         ("00400", "00100"): "total_operating_exp",
         ("03200", "00100"): "net_income",
     },
+    "A000000": {  # grand-total line 100: salaries (col1) + contract labor (col2)
+        ("10000", "00100"): "total_salaries",
+        ("10000", "00200"): "contract_labor",
+        ("10000", "00900"): "wksht_a_total_cost",
+    },
     "S300002": {
-        ("00100", "00100"): "total_salaries",
         ("00100", "00500"): "paid_hours",
     },
 }
 # Order of the compact stored row.
 FIELDS = ["fy_begin", "fy_end", "status", "total_patient_rev", "net_patient_rev",
-          "total_operating_exp", "net_income", "total_salaries", "paid_hours"]
+          "total_operating_exp", "net_income", "total_salaries", "contract_labor",
+          "wksht_a_total_cost", "paid_hours"]
 
 csv.field_size_limit(10 * 1024 * 1024)
 
@@ -150,7 +161,8 @@ def main() -> None:
         row = [rpt["fy_begin"], rpt["fy_end"], rpt["status"],
                v.get("total_patient_rev"), v.get("net_patient_rev"),
                v.get("total_operating_exp"), v.get("net_income"),
-               v.get("total_salaries"), v.get("paid_hours")]
+               v.get("total_salaries"), v.get("contract_labor"),
+               v.get("wksht_a_total_cost"), v.get("paid_hours")]
         fresh.setdefault(rpt["ccn"], {})[fy] = row
         kept += 1
 
