@@ -52,29 +52,38 @@ zero-padded. So a metric is a `(WKSHT_CD, LINE_NUM, CLMN_NUM)` triple.
 `LAST_RPT_SW = 'Y'`, then the most recent `PROC_DT`, preferring a settled
 `RPT_STUS_CD` where present.
 
-## 3. Extraction targets
+## 3. Extraction targets — PINNED
 
-Values live at the coordinates below. **Exact `LINE_NUM`/`CLMN_NUM` are pinned at
-build** against the first downloaded `NMRC` file cross-checked with the Provider
-Reimbursement Manual, Part II, **Chapter 41** (the form + line instructions).
-Candidates:
+`nmrc` layout: `RPT_REC_NUM, WKSHT_CD (7-char), LINE_NUM (5-digit), CLMN_NUM
+(5-digit), ITM_VAL_NUM`. Coordinates below are **pinned and validated** against a
+real FY2025 `nmrc`, confirmed by the cost report's own arithmetic identities
+(net patient rev = gross − allowances; net patient income = net rev − opex).
 
-**Margin — Worksheet G-3 "Statement of Revenues and Expenses" (column 1):**
-- Net patient revenue — G-3 **line 3** (line 1 gross − line 2 allowances)
-- Total operating expenses — G-3 **line 4**
-- Net income (loss) — G-3 **line ~28/29** (bottom "net income" line)
-- Derived: **total margin** = net income ÷ total revenue; **operating margin** =
-  (net patient revenue − operating expenses) ÷ net patient revenue
+**Margin — Worksheet G-3 `G300000`, column `00100`:**
+| Field | LINE_NUM | Check |
+|---|---|---|
+| Total patient revenue | `00100` | — |
+| Net patient revenue | `00300` | = line 100 − line 200 ✓ |
+| Total operating expenses | `00400` | — |
+| Net income (loss) for the period | `03200` | bottom line ✓ |
+- **Operating margin** = (net patient rev − total operating exp) ÷ net patient rev
+  → the free-teaser **band** (core patient-services result).
+- **Total margin** = net income ÷ total revenue → paid depth (includes
+  non-operating "other income", which can mask a loss-making care business —
+  e.g. one validated report showed −10.6% operating vs +$6.0M net income).
 
-**Labor economics:**
-- Total salaries — **Worksheet A, column 1 (Salaries), total line** (candidate
-  line ~100); cross-check Worksheet S-3 Part II line 1
-- **Contract labor** — **Worksheet S-3 Part II** contract-labor line(s). ⚠️ This
-  is the least-standard coordinate and the most important one to verify against
-  Chapter 41, because it is the direct dollar analogue of the PBJ agency-hours
-  signal.
-- Derived (free teaser): **(salaries + contract labor) ÷ total operating
-  expenses**; and **contract-labor $** standalone next to PBJ agency %.
+**Labor — Worksheet S-3 Part II `S300002`:**
+| Field | LINE_NUM | CLMN_NUM | Check |
+|---|---|---|---|
+| Total salaries | `00100` | `00100` | = line 1100 + line 900 ✓ |
+| Total paid hours | `00100` | `00500` | col 6 = salaries ÷ hours ✓ |
+- **Salary intensity** = total salaries ÷ total operating expenses → the v1
+  free-teaser labor metric (rock-solid; observed 31–56%).
+- **Contract labor** (the direct-dollar analogue of PBJ agency hours) —
+  ⚠️ **deferred.** Candidate lines in `S300002` (e.g. 900 / 1200) are plausible
+  but their labels can't be confirmed from values alone; pin against PRM Ch 41
+  (or a filed S-3 Part II on snfdata.com) before publishing a contract-labor
+  figure. The ingester captures the full S-3 Part II grid so nothing is lost.
 
 ## 4. Vintage, caveats, volume
 
