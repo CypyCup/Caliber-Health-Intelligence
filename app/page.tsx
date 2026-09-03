@@ -183,7 +183,7 @@ export default async function HomePage() {
             <dl className="grid grid-cols-2 gap-4 text-sm">
               <Stat label="Facilities (national, CMS)" value={chainMeta.national_facilities.toLocaleString()} />
               <Stat label="Operating chains (CMS)" value={chainMeta.chains.toLocaleString()} />
-              <Stat label="Chain data vintage" value="Jun 2026" />
+              <Stat label="Chain data vintage" value={fmtPeriod(chainMeta.latest_period)} />
               <Stat label="Facility demo (this build)" value={`${meta.facilities} facilities`} />
             </dl>
           </div>
@@ -201,6 +201,13 @@ function ValueProp({ badge, title, body }: { badge: string; title: string; body:
       <p className="mt-2 text-sm text-ink-soft">{body}</p>
     </div>
   );
+}
+
+/** "2026-09" -> "Sep 2026" (falls back to the raw value if unparseable). */
+function fmtPeriod(period: string): string {
+  const [y, m] = (period || "").split("-");
+  const mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(m) - 1];
+  return mon && y ? `${mon} ${y}` : period || "—";
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
