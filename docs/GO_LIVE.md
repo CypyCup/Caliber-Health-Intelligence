@@ -13,21 +13,25 @@ outgrow the free tiers.
 ## The shape of it
 
 ```
- Registrar (domain)          Vercel (hosting the Next.js app)         Supabase (Postgres)
- caliberhealthintelligence ───DNS──▶  Atlas  ──CHI_DATA_SOURCE=supabase──▶  facilities, chains,
-   .com                                                                      metric history
+ Wix (domain)                Vercel (hosting the Next.js app)         Supabase (Postgres)
+ caliberhealthintelligence ───DNS──▶  Atlas  ──serves bundled CMS seed        leads (lead capture)
+   .com                                        + writes leads──────────────▶  + durable data store
                                         ▲
                                         └── Python ETL (monthly CMS refresh) ─┘
 ```
 
 Two decisions up front:
-- **Data backend.** The app runs today on JSON files in the repo. That's fine
-  for a demo, but the facility history is already ~28 MB and grows ~5 MB/month —
-  too big to sit inside a serverless function long-term. **Go live on Supabase**
-  (Postgres) so the data lives in a database and the app stays small. Steps 3–4.
-- **Auth.** The registration wall is a demo cookie today. For a real lead-capture
-  funnel, wire Supabase Auth (or keep the soft wall + write leads to the DB).
-  Step 6. Not required to launch.
+- **Data backend.** The app serves the committed CMS seed (`data/seed/**`, ~71 MB)
+  directly from the serverless functions. This is **verified to build and fit**
+  inside Vercel's 250 MB per-function limit (the heaviest route traces to ~75 MB),
+  via `outputFileTracingIncludes` in `next.config.mjs` — already committed. So you
+  deploy straight from git with `CHI_DATA_SOURCE` **unset**. Supabase is loaded
+  with the same data as your durable store (for lead capture now, and the
+  "Ask the Atlas" / analytics phase next); flipping the app's *read-path* to
+  Postgres is a future optimization, not a launch blocker.
+- **Auth.** The registration wall is a soft cookie today. For a real lead-capture
+  funnel, set `CHI_LEAD_SINK=supabase` so `/api/register` writes every email to
+  the `leads` table (wired — Step 6). Full Supabase Auth is optional.
 
 ---
 
@@ -59,46 +63,50 @@ export SUPABASE_SERVICE_ROLE_KEY=...        # service role
 python3 etl/load_supabase.py                # pushes facilities, chains, and all metric history
 ```
 
-This loads everything you've ingested (facilities, chains, and every monthly
-vintage). Re-run it after each monthly refresh (Step 7).
-
-> **Read-path note:** the app's Supabase read layer is being finished against a
-> live project (chain trends + roll-ups need porting from the JSON layer). Until
-> that's done, load the data now and deploy on JSON (Step 4 alt) — the moment the
-> read-path port lands, flip `CHI_DATA_SOURCE=supabase` and the app serves from
-> Postgres with no other change.
+This loads everything you've ingested (facilities, chains, every monthly
+vintage, and 37 quarters of PBJ). Re-run it after each monthly refresh (Step 7).
+The data also backs lead capture (Step 6) and is the durable store for the next
+phase. **You do not need to wait on this to deploy** — the app serves the
+bundled seed either way.
 
 ## Step 4 — Deploy to Vercel (~10 min)
 
 1. Push this branch to GitHub (already done) and open vercel.com → **Add New →
    Project** → import `cypycup/caliber-health-intelligence`.
 2. Framework preset: **Next.js** (auto-detected). Build command and output are
-   the defaults.
-3. **Environment Variables** (Project Settings → Environment Variables):
+   the defaults. `next.config.mjs` already bundles `data/seed/**` into the
+   functions, so the seed ships with the deploy.
+3. **Environment Variables** (Project Settings → Environment Variables) — note
+   `CHI_DATA_SOURCE` is intentionally **not** set (the app serves the bundled
+   seed; the Postgres read-path is a later optimization):
    | Name | Value |
    |---|---|
-   | `CHI_DATA_SOURCE` | `supabase` |
-   | `NEXT_PUBLIC_SUPABASE_URL` | your Project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key |
-   | `SUPABASE_SERVICE_ROLE_KEY` | service role key |
+   | `NEXT_PUBLIC_SUPABASE_URL` | your Project URL (`https://lgdcgecvmibapopgfyol.supabase.co`) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your publishable/anon key (`sb_publishable_…`) |
    | `CHI_LEAD_SINK` | `supabase` |
-4. **Deploy.** You get a `*.vercel.app` URL to verify.
+4. **Deploy.** You get a `*.vercel.app` URL to verify. Register with a test email
+   and confirm the row lands in Supabase → Table Editor → `leads`.
 
-*Alt (deploy today on JSON, before the Supabase read-path is finished):* set
-`CHI_DATA_SOURCE=demo` and add `outputFileTracingIncludes` for `data/seed/**` in
-`next.config.mjs` so the seed files ship with the functions. Works now; migrate
-to Supabase when ready.
+## Step 5 — Point the Wix domain at Vercel (~10 min + DNS propagation)
 
-## Step 5 — Point the domain at Vercel (~10 min + DNS propagation)
+You bought the domain through **Wix**, so the DNS records live in Wix's dashboard
+(you keep the domain at Wix and just point it at Vercel — you are not moving the
+registration).
 
-1. Vercel → Project → **Settings → Domains** → add `caliberhealthintelligence.com`
-   and `www.caliberhealthintelligence.com`.
-2. Vercel shows the records to add at your registrar — typically:
-   - `A` record `@` → `76.76.21.21`
-   - `CNAME` record `www` → `cname.vercel-dns.com`
-   (Use whatever Vercel displays — it's authoritative.)
-3. Add them at the registrar. TLS is issued automatically. Propagation is minutes
-   to a few hours.
+1. Vercel → Project → **Settings → Domains** → add both
+   `caliberhealthintelligence.com` and `www.caliberhealthintelligence.com`.
+   Vercel shows the exact records to create — typically:
+   - `A` record, host `@` → `76.76.21.21`
+   - `CNAME` record, host `www` → `cname.vercel-dns.com`
+2. In Wix: **My Domains → caliberhealthintelligence.com → DNS Records** (Advanced/
+   "Edit DNS"). Add the A record for `@` and the CNAME for `www` exactly as Vercel
+   shows them. Remove any conflicting existing `A`/`CNAME` on `@`/`www` that point
+   to Wix's parking page.
+   - If Wix won't let you set the apex `A` record, use Vercel's **nameserver**
+     option instead: switch the domain's nameservers (Wix → Domains → Advanced →
+     Nameservers) to the `ns1/ns2.vercel-dns.com` values Vercel provides.
+3. Back in Vercel, the domains flip to **Valid** once DNS propagates (minutes to a
+   few hours). TLS is issued automatically.
 
 ## Step 6 — (Optional) real registration/auth
 
@@ -125,15 +133,15 @@ every metric gains another month of trend.
 
 ## Launch checklist
 
-- [ ] Domain purchased
-- [ ] Supabase project created, `schema.sql` run
-- [ ] Data loaded (`load_supabase.py`)
-- [ ] Supabase read-path finished + `CHI_DATA_SOURCE=supabase` verified
-- [ ] Vercel project deployed with env vars
-- [ ] Domain DNS pointed at Vercel, TLS green
-- [ ] Registration writing leads to Supabase
+- [x] Domain purchased (Wix)
+- [x] Supabase project created, `schema.sql` run
+- [x] Data loaded (`load_supabase.py`) — all 6 tables verified
+- [ ] Vercel project deployed with env vars (`CHI_DATA_SOURCE` unset)
+- [ ] Domain DNS pointed at Vercel (via Wix), TLS green
+- [ ] Registration writing leads to Supabase (test email → `leads` table)
 - [ ] Monthly refresh automated
 - [ ] Methodology/disclaimer reviewed for public launch (ADP compliance posture)
+- [ ] *(Later)* Port the read-path to Postgres and flip `CHI_DATA_SOURCE=supabase`
 
 ## Costs at a glance
 
