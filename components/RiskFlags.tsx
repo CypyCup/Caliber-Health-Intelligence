@@ -51,7 +51,7 @@ export function RiskFlagList({ flags }: { flags: RiskFlag[] }) {
   if (flags.length === 0) {
     return (
       <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-        No rule-based risk flags fired on the disclosed CMS metrics for this facility.
+        No rule-based indicators fired on the disclosed CMS metrics for this facility.
       </div>
     );
   }

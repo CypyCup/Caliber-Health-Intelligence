@@ -1,21 +1,19 @@
 import type { Metadata } from "next";
-import { getCmsChainsDirectory, getCmsChainMeta, getCmsNational } from "@/lib/data/cmsChains";
+import { getCmsChainsDirectory, getCmsChainMeta } from "@/lib/data/cmsChains";
 import { getAllChainFacilityRollups } from "@/lib/data";
-import { getChainOwnership } from "@/lib/ownershipOverrides";
 import { CmsChainsTable, type ChainRow } from "@/components/CmsChainsTable";
-import { formatVintage } from "@/lib/format";
+import { getCanonicalFigures } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Operators & chains" };
+export const metadata: Metadata = { title: "Operators and chains" };
 export const revalidate = 3600;
 
 export default async function ChainsPage() {
   const dir = getCmsChainsDirectory();
   const meta = getCmsChainMeta();
-  const national = getCmsNational();
   const rollups = await getAllChainFacilityRollups();
+  const figures = await getCanonicalFigures();
 
   const rows: ChainRow[] = dir.map((r) => {
-    const own = getChainOwnership(r.chain.id);
     const roll = rollups[r.chain.id];
     return {
       id: r.chain.id,
@@ -33,9 +31,6 @@ export default async function ChainsPage() {
       flagCount: r.flagCount,
       topSeverity: r.topSeverity,
       pct_for_profit: r.chain.pct_for_profit,
-      privateEquity: own?.private_equity,
-      reit: own?.reit,
-      publicTicker: own?.public_ticker,
       occupancy_pct: roll?.avg_occupancy_pct ?? null,
       missingPbjPct: roll?.missing_pbj_pct,
     };
@@ -46,24 +41,25 @@ export default async function ChainsPage() {
 
   return (
     <div className="container-chi py-10">
-      <p className="kicker">The entity-resolution layer · real CMS data</p>
-      <h1 className="mt-1 text-3xl font-semibold text-ink">Operators &amp; chains</h1>
+      <p className="kicker">The federal chain record</p>
+      <h1 className="mt-1 text-3xl font-semibold text-ink">Operators and chains</h1>
       <p className="mt-2 max-w-3xl text-sm text-ink-soft">
-        Every operating chain in the U.S. skilled-nursing sector, from CMS&apos;s{" "}
-        <a href={meta.source} target="_blank" rel="noreferrer" className="link-quiet">Nursing Home Chain Performance Measures</a>{" "}
-        — <strong>{meta.chains.toLocaleString()}</strong> chains over{" "}
-        <strong>{meta.national_facilities.toLocaleString()}</strong> facilities, resolved to the level
-        an investor question is actually asked at. Real CMS data, vintage {formatVintage((national.vintage_date as string) ?? meta.latest_period + "-01")}.
+        Every operating chain in the U.S. skilled nursing sector, from the CMS{" "}
+        <a href={meta.source} target="_blank" rel="noreferrer" className="link-quiet">Nursing Home Chain Performance Measures</a>
+        {" "}({figures.chains.label} operating chains, {figures.chains.vintage}). The Atlas presents the
+        federal chain record at the chain level: which facilities each chain controls, census-weighted
+        staffing, the share of facilities below the CMS staffing benchmark, and the distribution of
+        enforcement actions across the chain&apos;s facilities.
       </p>
       <p className="mt-2 text-xs text-ink-faint">
-        Chain-level measures are real CMS data, and each chain links to its real member facilities
-        (via CMS Chain ID). Occupancy and incomplete-PBJ counts are CHI-computed from the facility
-        list; PE-sponsor and REIT-landlord resolution is CHI&apos;s value-add layered on top.
+        Chain attribution comes solely from the federal chain record. Caliber does not publish
+        inferred ownership relationships and does not attribute facilities to private equity sponsors
+        or real estate owners.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">
-        <Kpi label="Operating chains" value={meta.chains.toLocaleString()} />
-        <Kpi label="Facilities (national)" value={meta.national_facilities.toLocaleString()} />
+        <Kpi label="Operating chains" value={figures.chains.label} />
+        <Kpi label="Facilities (national)" value={figures.facilities.label} />
         <Kpi label="Chains below staffing benchmark" value={belowBench.toLocaleString()} tone="warn" />
         <Kpi label="Chains operating an SFF" value={withSff.toLocaleString()} tone="bad" />
       </div>

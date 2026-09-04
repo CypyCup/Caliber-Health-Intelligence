@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { DemoDataBanner } from "@/components/DemoDataBanner";
+import { StatusBanner } from "@/components/StatusBanner";
 
 export const metadata: Metadata = {
   title: {
-    default: "Caliber Workforce Atlas",
-    template: "%s · Caliber Workforce Atlas",
+    default: "Caliber Health Intelligence",
+    template: "%s · Caliber Health Intelligence",
   },
   description:
-    "The free, public-data workforce intelligence surface for U.S. skilled nursing facilities — from Caliber Health Intelligence. Every metric, with its vintage. Trends CMS Care Compare doesn't show.",
+    "The longitudinal workforce record of U.S. skilled nursing. Caliber Health Intelligence preserves every federal staffing, quality, financial, and ownership release as published, and joins them at the facility across time and through every change of ownership.",
 };
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col">
-        <DemoDataBanner />
+        <StatusBanner />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

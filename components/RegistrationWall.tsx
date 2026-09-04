@@ -38,8 +38,8 @@ export function RegistrationWall({ nextLabel }: { nextLabel: string }) {
         <h1 className="mt-2 text-xl font-semibold text-ink">See {nextLabel}</h1>
         <p className="mt-2 text-sm text-ink-soft">
           The Caliber Workforce Atlas is free. Register once to explore full facility and chain
-          profiles — staffing trends, turnover, deficiencies, and rule-based risk flags, each with
-          its data vintage.
+          profiles: staffing trends, turnover, deficiencies, and rule-based indicators, each with its
+          source vintage.
         </p>
         <form onSubmit={submit} className="mt-5 space-y-3">
           <div>
@@ -76,8 +76,7 @@ export function RegistrationWall({ nextLabel }: { nextLabel: string }) {
             <p className="text-xs text-red-600">Something went wrong. Please try again.</p>
           )}
           <p className="text-[11px] text-ink-faint">
-            Demo mode: this records a lead locally and sets a cookie — no email is sent and no
-            password is required. Production wires this to Supabase Auth.
+            Registration records your email so Caliber can follow up. No password is required.
           </p>
         </form>
       </div>

@@ -27,7 +27,6 @@ export default async function SearchPage({
     q: s("q"),
     city: s("city"),
     ownership: s("ownership"),
-    ownerType: (s("ownerType") as SearchParams["ownerType"]) || undefined,
     minStar: s("minStar") ? Number(s("minStar")) : undefined,
     hasFlags: s("hasFlags") === "1",
     chainId: s("chainId"),
@@ -44,8 +43,9 @@ export default async function SearchPage({
       <p className="kicker">Explore</p>
       <h1 className="mt-1 text-3xl font-semibold text-ink">Skilled nursing facilities</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        Default sort is risk exposure — click any column to re-sort, and filter by occupancy or PBJ
-        completeness. Every metric carries its vintage on the facility page.
+        The default order is by indicator severity. Select any column to reorder, and filter by
+        occupancy or Payroll-Based Journal completeness. Every metric carries its vintage on the
+        facility page.
       </p>
 
       <div className="mt-6 space-y-3">
@@ -63,13 +63,13 @@ export default async function SearchPage({
           <thead className="bg-paper-muted text-left text-xs uppercase tracking-wide text-ink-faint">
             <tr>
               <th className="px-4 py-3"><SortHeader field="name" label="Facility" /></th>
-              <th className="px-4 py-3 font-medium">Owner</th>
+              <th className="px-4 py-3 font-medium">Ownership type</th>
               <th className="px-4 py-3 text-right"><SortHeader field="hprd" label="Total HPRD" align="right" /></th>
               <th className="px-4 py-3 text-right"><SortHeader field="turnover" label="Turnover" align="right" /></th>
               <th className="px-4 py-3 text-right"><SortHeader field="occupancy" label="Occupancy" align="right" /></th>
               <th className="px-4 py-3 font-medium">PBJ</th>
               <th className="px-4 py-3"><SortHeader field="overall" label="Overall" /></th>
-              <th className="px-4 py-3"><SortHeader field="risk" label="Risk" /></th>
+              <th className="px-4 py-3"><SortHeader field="risk" label="Indicators" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -87,11 +87,7 @@ export default async function SearchPage({
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {r.privateEquity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE</span>}
-                    {r.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT</span>}
-                    <span className="pill bg-slate-100 text-ink-faint">{r.facility.ownership_type}</span>
-                  </div>
+                  <span className="pill bg-slate-100 text-ink-faint">{r.facility.ownership_type}</span>
                 </td>
                 <td className="px-4 py-3 text-right stat-num">{r.total_nurse_hprd?.toFixed(2) ?? "—"}</td>
                 <td className="px-4 py-3 text-right stat-num">{r.turnover_pct != null ? `${r.turnover_pct.toFixed(0)}%` : "—"}</td>
@@ -106,11 +102,11 @@ export default async function SearchPage({
                 <td className="px-4 py-3"><StarRating value={r.overall_star} size={13} /></td>
                 <td className="px-4 py-3">
                   {r.flagCount === 0 ? (
-                    <span className="pill bg-green-50 text-green-700 border border-green-200">Clear</span>
+                    <span className="pill bg-green-50 text-green-700 border border-green-200">None</span>
                   ) : (
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2" title="Indicators present; see the facility page for each threshold">
                       <span className={`h-2.5 w-2.5 rounded-full ${SEV_DOT[r.topSeverity ?? "info"]}`} />
-                      <span className="stat-num text-ink-soft">{r.flagCount}</span>
+                      <span className="text-ink-soft">Present</span>
                     </span>
                   )}
                 </td>

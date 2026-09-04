@@ -68,7 +68,7 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="Search operators… (e.g. Ensign, PACS, Genesis)"
+          placeholder="Search operators by name"
           className="w-72 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
         />
         <select className={sel} value={minFac} onChange={(e) => setMinFac(Number(e.target.value))}>
@@ -79,7 +79,7 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
           <option value={100}>100+ facilities</option>
         </select>
         <select className={sel} value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-          <option value="risk">Sort: risk</option>
+          <option value="risk">Sort: indicators</option>
           <option value="facilities">Sort: size</option>
           <option value="staffing">Sort: lowest staffing</option>
           <option value="turnover">Sort: highest turnover</option>
@@ -103,7 +103,7 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
               <th className="px-4 py-3 font-medium text-right">Turnover</th>
               <th className="px-4 py-3 font-medium text-right">Occupancy</th>
               <th className="px-4 py-3 font-medium text-right">Total fines</th>
-              <th className="px-4 py-3 font-medium">Flags</th>
+              <th className="px-4 py-3 font-medium">Indicators</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -112,9 +112,6 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
                 <td className="px-4 py-3">
                   <Link href={`/chain/${r.id}`} className="font-medium text-brand hover:underline">{r.name}</Link>
                   <div className="mt-0.5 flex flex-wrap gap-1">
-                    {r.privateEquity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE</span>}
-                    {r.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT</span>}
-                    {r.publicTicker && <span className="pill bg-slate-100 text-ink-faint">{r.publicTicker}</span>}
                     {(r.sff ?? 0) >= 1 && <span className="pill bg-red-50 text-risk-critical border border-red-200">{Math.round(r.sff!)} SFF</span>}
                     {(r.abuse_count ?? 0) >= 1 && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">{Math.round(r.abuse_count!)} abuse</span>}
                     {(r.missingPbjPct ?? 0) >= 25 && <span className="pill bg-amber-50 text-amber-800 border border-amber-200" title="Share of facilities with incomplete PBJ data">{r.missingPbjPct}% incomplete PBJ</span>}
@@ -131,11 +128,11 @@ export function CmsChainsTable({ rows }: { rows: ChainRow[] }) {
                 <td className="px-4 py-3 text-right stat-num">{r.fines_total_usd != null ? `$${Math.round(r.fines_total_usd).toLocaleString("en-US")}` : "—"}</td>
                 <td className="px-4 py-3">
                   {r.flagCount === 0 ? (
-                    <span className="pill bg-green-50 text-green-700 border border-green-200">Clear</span>
+                    <span className="pill bg-green-50 text-green-700 border border-green-200">None</span>
                   ) : (
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2" title="Indicators present; see the operator page for each threshold">
                       <span className={`h-2.5 w-2.5 rounded-full ${SEV_DOT[r.topSeverity ?? "info"]}`} />
-                      <span className="stat-num text-ink-soft">{r.flagCount}</span>
+                      <span className="text-ink-soft">Present</span>
                     </span>
                   )}
                 </td>

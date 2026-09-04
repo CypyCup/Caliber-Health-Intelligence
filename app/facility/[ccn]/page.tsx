@@ -90,7 +90,7 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
           </div>
           <div className="text-center">
             <p className="stat-num text-2xl font-semibold text-ink">{flags.length}</p>
-            <p className="text-xs text-ink-faint">risk flags</p>
+            <p className="text-xs text-ink-faint">indicators</p>
           </div>
         </div>
       </div>
@@ -117,20 +117,21 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
       {facility.pbj_incomplete && (
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           <span className="font-semibold">Incomplete PBJ data.</span> CMS could not compute one or more
-          turnover/staffing measures for this facility from submitted payroll data (footnote 26/27) —
-          read its staffing figures with that caveat.
+          turnover or staffing measures for this facility from submitted payroll data (footnote 26 or
+          27). Read its staffing figures with that caveat.
         </p>
       )}
 
-      {/* Risk flags */}
+      {/* Indicators */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-ink">Risk flags</h2>
-          <span className="text-xs text-ink-faint">Rule-based · each tied to a CMS metric &amp; published threshold</span>
+          <h2 className="text-xl font-semibold text-ink">Indicators</h2>
+          <span className="text-xs text-ink-faint">Rule-based · each tied to one CMS metric and one published threshold</span>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-ink-soft">
-          Transparent signals, not a composite score. The deeper synthesis — peer cohorts, financial
-          overlays, and forward commentary — is CHI&apos;s quarterly research.
+          Indicators are rule-based. Each traces to one disclosed federal metric and one published
+          threshold. Peer cohort analysis, financial overlays, and forward commentary are published in
+          Caliber&apos;s quarterly research.
         </p>
         <div className="mt-4">
           <RiskFlagList flags={flags} />
@@ -144,8 +145,8 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
       <section className="mt-10">
         <h2 className="text-xl font-semibold text-ink">Trends</h2>
         <p className="mt-1 text-sm text-ink-soft">
-          Care Compare has no memory of last quarter. Because CHI archives every vintage, the Atlas
-          shows the trajectory.
+          Care Compare shows only the current value. Because Caliber captures every vintage, the Atlas
+          shows quarter-over-quarter and year-over-year movement.
         </p>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {trendMetrics.map((m) => (
@@ -165,15 +166,20 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
         </div>
       </section>
 
-      {/* Ownership history (CMS Change of Ownership) */}
+      {/* Change of ownership (CMS Change of Ownership record) */}
       <section className="mt-10">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold text-ink">Ownership history</h2>
-          <span className="text-xs text-ink-faint">CMS Change-of-Ownership records</span>
+          <h2 className="text-xl font-semibold text-ink">Change of ownership</h2>
+          <span className="text-xs text-ink-faint">CMS Change-of-Ownership record</span>
         </div>
         {chow.length === 0 ? (
           <p className="mt-2 text-sm text-ink-soft">No CMS change-of-ownership record for this facility since 2016.</p>
         ) : (
+          <>
+          <p className="mt-2 text-sm text-ink-soft">
+            This facility has {chow.length} recorded change-of-ownership transaction{chow.length === 1 ? "" : "s"} since 2016.
+            Counts for recent quarters are incomplete because of federal publication lag.
+          </p>
           <ol className="mt-4 space-y-3 border-l border-slate-200 pl-5">
             {chow.map((tx, i) => (
               <li key={i} className="relative">
@@ -190,6 +196,7 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
               </li>
             ))}
           </ol>
+          </>
         )}
         {facility.changed_ownership_12mo && chow.length > 0 && (
           <p className="mt-3 text-xs text-risk-watch">Provider Information also flags an ownership change in the last 12 months.</p>
@@ -216,8 +223,8 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
             </div>
             {cat === "financial" && hasLagged && (
               <p className="mt-1 max-w-3xl text-sm text-ink-soft">
-                Cost-report metrics run 12–18 months behind. Related-party rent and management fees
-                can distort reported margin — read alongside the ownership structure above.
+                Cost report metrics run 12 to 18 months behind. Related-party rent and management fees
+                can affect reported margin. Read them alongside the change-of-ownership record above.
               </p>
             )}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -229,16 +236,15 @@ export default async function FacilityPage({ params }: { params: { ccn: string }
         );
       })}
 
-      {/* CTA to research */}
+      {/* Research */}
       <section className="mt-12 rounded-xl border border-slate-200 bg-paper-muted p-6">
-        <h2 className="text-lg font-semibold text-ink">Underwriting this facility or its operator?</h2>
+        <h2 className="text-lg font-semibold text-ink">Research on this facility and its operator</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-soft">
-          The Atlas gives you the public data and the trend. Caliber Health Intelligence&apos;s
-          quarterly research adds peer-cohort benchmarking, financial overlays, and forward-looking
-          workforce commentary — the synthesis diligence actually turns on.
+          The Atlas presents the federal record and its movement over time. Caliber&apos;s quarterly
+          research adds peer cohort analysis, financial and staffing linkage, and forward commentary.
         </p>
-        <Link href="/methodology" className="mt-4 inline-block rounded-lg bg-brand-deep px-4 py-2 text-sm font-semibold text-white hover:bg-brand">
-          How the research works
+        <Link href="/research" className="mt-4 inline-block rounded-lg bg-brand-deep px-4 py-2 text-sm font-semibold text-white hover:bg-brand">
+          Caliber quarterly research
         </Link>
       </section>
     </div>

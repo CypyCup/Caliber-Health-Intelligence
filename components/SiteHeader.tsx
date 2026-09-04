@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
-
-const NAV = [
-  { href: "/search", label: "Explore facilities" },
-  { href: "/chains", label: "Operators & chains" },
-  { href: "/compare", label: "Compare" },
-  { href: "/methodology", label: "Methodology" },
-];
+import { NAV } from "@/lib/site";
 
 export function SiteHeader() {
   return (
@@ -31,7 +25,7 @@ export function SiteHeader() {
             href="/search"
             className="rounded-lg bg-brand-deep px-3.5 py-2 text-sm font-semibold text-white hover:bg-brand"
           >
-            Search
+            Explore facilities
           </Link>
         </div>
       </div>

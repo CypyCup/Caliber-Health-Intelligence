@@ -48,7 +48,7 @@ export function PbjSection({
       </div>
       <p className="mt-1 max-w-3xl text-sm text-ink-soft">
         Payroll-verified hours, split into facility employees vs. contract (agency + individual
-        contractors). Not case-mix adjusted — read staffing levels alongside acuity.
+        contractors). Not case-mix adjusted. Read staffing levels alongside acuity.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -109,7 +109,7 @@ export function PbjSection({
           Flagged quarters in the series:{" "}
           {Object.entries(flagged)
             .filter(([q]) => series.some((p) => p.quarter === q))
-            .map(([q, why]) => `${qtrLabel(q)} — ${why}`)
+            .map(([q, why]) => `${qtrLabel(q)}: ${why}`)
             .join("  ·  ")}
         </p>
       )}

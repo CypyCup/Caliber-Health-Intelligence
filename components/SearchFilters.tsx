@@ -21,11 +21,6 @@ export function SearchFilters({ cities }: { cities: string[] }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select className={sel} value={params.get("ownerType") ?? ""} onChange={(e) => setParam("ownerType", e.target.value)}>
-        <option value="">All owners</option>
-        <option value="pe">PE-backed</option>
-        <option value="reit">REIT-held</option>
-      </select>
       <select className={sel} value={params.get("ownership") ?? ""} onChange={(e) => setParam("ownership", e.target.value)}>
         <option value="">Any profit status</option>
         <option value="For-profit">For-profit</option>
@@ -63,9 +58,9 @@ export function SearchFilters({ cities }: { cities: string[] }) {
           onChange={(e) => setParam("hasFlags", e.target.checked ? "1" : "")}
           className="accent-brand"
         />
-        Has risk flags
+        Has indicators
       </label>
-      {Array.from(params.keys()).some((k) => ["ownerType", "ownership", "city", "minStar", "hasFlags", "q", "chainId", "occ", "pbj", "sort", "dir"].includes(k)) && (
+      {Array.from(params.keys()).some((k) => ["ownership", "city", "minStar", "hasFlags", "q", "chainId", "occ", "pbj", "sort", "dir"].includes(k)) && (
         <button
           onClick={() => router.push("/search")}
           className="rounded-lg px-3 py-2 text-sm font-medium text-ink-faint hover:text-brand"

@@ -21,7 +21,7 @@ export function ConfidenceBadge({
     );
   }
   return (
-    <span className={`pill border border-slate-300 bg-slate-50 text-ink-faint ${className}`} title="Judgment-based mapping — excluded from published chain-level figures.">
+    <span className={`pill border border-slate-300 bg-slate-50 text-ink-faint ${className}`} title="Judgment-based mapping, excluded from published chain-level figures.">
       <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden>
         <circle cx="6" cy="6" r="4.6" stroke="currentColor" strokeWidth="1.4" fill="none" strokeDasharray="2 1.6" />
       </svg>

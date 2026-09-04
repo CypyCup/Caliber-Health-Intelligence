@@ -47,7 +47,7 @@ export function NationalAgencyChart({ compact = false }: { compact?: boolean }) 
         </div>
       )}
       <p className="mt-1 text-xs text-ink-faint">
-        National nurse agency reliance — contract hours ÷ total nurse hours, all ~14,700 facilities.
+        National nurse agency reliance. Contract hours divided by total nurse hours, all facilities.
       </p>
       <div className="mt-3">
         <TrendChart metric={metric} height={compact ? 150 : 190} />

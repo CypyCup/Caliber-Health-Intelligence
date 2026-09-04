@@ -3,7 +3,6 @@ import type { CmsChainProfile, ResolvedChainMetric } from "@/lib/data/cmsChains"
 import type { ChainFacilityRollup, ChainTrends } from "@/lib/data";
 import type { ChainPbjPoint } from "@/lib/data/pbj";
 import type { ResolvedMetric } from "@/lib/types";
-import type { ChainOwnership } from "@/lib/ownershipOverrides";
 import { CHAIN_METRICS_BY_CATEGORY } from "@/lib/cmsChainMetrics";
 import { CATEGORY_LABELS } from "@/lib/metrics";
 import { StatTile } from "@/components/Badges";
@@ -35,7 +34,6 @@ export function CmsChainProfileView({
   trends,
   chowRecent = [],
   pbj,
-  ownership,
 }: {
   profile: CmsChainProfile;
   members?: MemberFacility[];
@@ -43,7 +41,6 @@ export function CmsChainProfileView({
   trends?: ChainTrends;
   chowRecent?: { ccn: string; name: string; tx: { date: string; buyer: string; seller: string; type: string; year: string } }[];
   pbj?: { history: ChainPbjPoint[]; agency?: ResolvedMetric; hprd?: ResolvedMetric };
-  ownership?: ChainOwnership;
 }) {
   const { chain, metrics, flags, national, latestPeriod } = profile;
   const vint = `${latestPeriod}-01`;
@@ -76,22 +73,18 @@ export function CmsChainProfileView({
 
       <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="kicker">Chain profile · real CMS data</p>
+          <p className="kicker">Chain profile · federal chain record</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">{chain.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span className="pill bg-slate-100 text-ink-soft">{Math.round(chain.num_facilities ?? 0)} facilities · {chain.num_states ?? "—"} states</span>
             {(chain.pct_for_profit ?? 0) >= 50 && <span className="pill bg-slate-100 text-ink-soft">{chain.pct_for_profit?.toFixed(0)}% for-profit</span>}
-            {ownership?.private_equity && <span className="pill bg-violet-50 text-violet-700 border border-violet-200">PE{ownership.pe_sponsor_name ? `: ${ownership.pe_sponsor_name}` : ""}</span>}
-            {ownership?.reit && <span className="pill bg-sky-50 text-sky-700 border border-sky-200">REIT{ownership.reit_name ? `: ${ownership.reit_name}` : ""}</span>}
-            {ownership?.public_ticker && <span className="pill bg-slate-100 text-ink-soft">Public: {ownership.public_ticker}</span>}
-            {ownership && <ConfidenceBadge confidence={ownership.confidence} />}
             {(chain.sff ?? 0) >= 1 && <span className="pill bg-red-50 text-risk-critical border border-red-200">{Math.round(chain.sff!)} Special Focus</span>}
             {(chain.abuse_count ?? 0) >= 1 && <span className="pill bg-orange-50 text-risk-elevated border border-orange-200">{Math.round(chain.abuse_count!)} abuse icon</span>}
             <VintageChip vintage={vint} period={latestPeriod} />
           </div>
           <p className="mt-2 max-w-2xl text-xs text-ink-faint">
-            CMS chain-level performance measures. Facility-level membership, PE-sponsor, and REIT
-            resolution are CHI&apos;s value-add and load with the facility ETL.
+            CMS chain-level performance measures. Facility membership comes from the federal chain
+            record. Caliber does not publish inferred ownership relationships.
           </p>
         </div>
         <div className="flex items-center gap-6 rounded-xl border border-slate-200 bg-white p-4">
@@ -101,7 +94,7 @@ export function CmsChainProfileView({
           </div>
           <div className="text-center">
             <p className="stat-num text-2xl font-semibold text-ink">{flags.length}</p>
-            <p className="text-xs text-ink-faint">risk flags</p>
+            <p className="text-xs text-ink-faint">indicators</p>
           </div>
         </div>
       </div>
@@ -123,10 +116,10 @@ export function CmsChainProfileView({
         <section className="mt-8 rounded-xl border border-slate-200 bg-paper-muted p-5">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-ink">From the facility roll-up</h2>
-            <span className="pill bg-brand-tint text-brand border border-brand/20">CHI-computed</span>
+            <span className="pill bg-brand-tint text-brand border border-brand/20">Derived by Caliber</span>
           </div>
           <p className="mt-1 text-sm text-ink-soft">
-            Chain-level measures CMS&apos;s chain file doesn&apos;t publish — derived by CHI from the
+            Chain-level measures the federal chain file does not publish, derived by Caliber from the
             {" "}{rollup.facility_count} member facilities.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -138,7 +131,7 @@ export function CmsChainProfileView({
             <StatTile
               label="Facilities with incomplete PBJ data"
               value={`${rollup.facilities_missing_pbj} of ${rollup.facility_count}`}
-              sub={pbjMoM != null ? `${pbjMoM >= 0 ? "▲ +" : "▼ "}${pbjMoM} MoM · ${rollup.missing_pbj_pct}% (fn 26/27)` : `${rollup.missing_pbj_pct}% — not computable (fn 26/27)`}
+              sub={pbjMoM != null ? `${pbjMoM >= 0 ? "▲ +" : "▼ "}${pbjMoM} MoM · ${rollup.missing_pbj_pct}% (fn 26/27)` : `${rollup.missing_pbj_pct}%, not computable (fn 26/27)`}
               tone={rollup.missing_pbj_pct >= 25 ? "warn" : "default"}
             />
             <StatTile label="Certified beds (portfolio)" value={rollup.total_beds.toLocaleString()} />
@@ -146,7 +139,7 @@ export function CmsChainProfileView({
 
           {hasChainTrend && (
             <div className="mt-5">
-              <p className="text-sm font-medium text-ink-soft">Chain trend — census-weighted, from the facility history</p>
+              <p className="text-sm font-medium text-ink-soft">Chain trend, census-weighted, from the facility history</p>
               <div className="mt-3 grid gap-4 lg:grid-cols-3">
                 {chainTrendCharts.map((m) =>
                   m && m.history.length >= 2 ? (
@@ -165,11 +158,11 @@ export function CmsChainProfileView({
         </section>
       )}
 
-      {/* Risk flags */}
+      {/* Indicators */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-ink">Risk flags</h2>
-          <span className="text-xs text-ink-faint">Rule-based · each tied to a CMS chain measure &amp; threshold</span>
+          <h2 className="text-xl font-semibold text-ink">Indicators</h2>
+          <span className="text-xs text-ink-faint">Rule-based · each tied to one CMS chain measure and one published threshold</span>
         </div>
         <div className="mt-4"><RiskFlagList flags={flags} /></div>
       </section>
@@ -195,13 +188,13 @@ export function CmsChainProfileView({
       {pbj && pbj.history.length > 0 && (pbj.agency?.history.length ?? 0) >= 2 && (
         <section className="mt-10">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-xl font-semibold text-ink">Agency &amp; staffing (PBJ)</h2>
-            <span className="pill bg-brand-tint text-brand border border-brand/20">CHI-computed</span>
+            <h2 className="text-xl font-semibold text-ink">Agency and staffing (PBJ)</h2>
+            <span className="pill bg-brand-tint text-brand border border-brand/20">Derived by Caliber</span>
           </div>
           <p className="mt-1 max-w-3xl text-sm text-ink-soft">
-            Census-weighted across member facilities — sum(contract hours) ÷ sum(nurse hours), never
-            an average of facility percentages. Attributed to <em>current</em> ownership (the Atlas has
-            no dated chain history), and computed over full-quarter (100% completeness) submissions.
+            Census-weighted across member facilities: sum of contract hours divided by sum of nurse
+            hours, never an average of facility percentages. Attributed to current membership, and
+            computed over full-quarter submissions at 100 percent completeness.
           </p>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {pbj.agency && (
@@ -273,7 +266,7 @@ export function CmsChainProfileView({
                   <th className="px-4 py-3 font-medium">Facility</th>
                   <th className="px-4 py-3 font-medium">Location</th>
                   <th className="px-4 py-3 font-medium">Mapping</th>
-                  <th className="px-4 py-3 font-medium">Risk flags</th>
+                  <th className="px-4 py-3 font-medium">Indicators</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -297,14 +290,14 @@ export function CmsChainProfileView({
       )}
 
       <section className="mt-12 rounded-xl border border-slate-200 bg-paper-muted p-6">
-        <h2 className="text-lg font-semibold text-ink">Underwriting this operator?</h2>
+        <h2 className="text-lg font-semibold text-ink">Research on this operator</h2>
         <p className="mt-1 max-w-2xl text-sm text-ink-soft">
-          These are CMS&apos;s published chain measures. CHI&apos;s quarterly research adds the
-          facility-level roll-up, PE-sponsor and REIT resolution, peer-cohort benchmarking, and
-          forward-looking workforce commentary.
+          These are the published federal chain measures. Caliber&apos;s quarterly research adds the
+          facility-level roll-up, peer cohort analysis, financial and staffing linkage, and forward
+          commentary. Caliber does not publish inferred ownership relationships.
         </p>
-        <Link href="/methodology" className="mt-4 inline-block rounded-lg bg-brand-deep px-4 py-2 text-sm font-semibold text-white hover:bg-brand">
-          How the research works
+        <Link href="/research" className="mt-4 inline-block rounded-lg bg-brand-deep px-4 py-2 text-sm font-semibold text-white hover:bg-brand">
+          Caliber quarterly research
         </Link>
       </section>
     </div>
